@@ -1,56 +1,44 @@
-# compiled output
-/api/dist
-/api/node_modules
-/api/build
-
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-
-# OS
+# --- OS ---
 .DS_Store
+Thumbs.db
 
-# Tests
-/coverage
-/.nyc_output
+# --- Logs ---
+*.log
+logs/
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
+# --- Env (secrets) ---
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+!.env.example
 
-# temp directory
-.temp
-.tmp
+# --- Node / backend ---
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.cache/
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# --- Flutter / Dart ---
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.metadata
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# --- Flutter Android ---
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/**/build/
+*.jks
+*.keystore
+*key.properties
+
+# --- Flutter iOS / macOS ---
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/ephemeral/
+mobile/macos/Pods/
+
+# --- IDE ---
+.idea/
+.vscode/
