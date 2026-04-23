@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       title: 'Lecture Attendance',
       theme: AppTheme.lightTheme,
       initialBinding: InitialBinding(),
-      initialRoute: Routes.home,
+      initialRoute: Routes.dashboard,
       getPages: Routes.pages,
     );
   }
