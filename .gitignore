@@ -42,3 +42,16 @@ mobile/macos/Pods/
 # --- IDE ---
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# --- Monorepo / System ---
+.pnpm-debug.log
+.npm/
+node_modules/
+.turbo/
+
+# --- Extra Flutter ---
+mobile/.pub-cache/
+mobile/android/app/src/main/res/drawable-*/
+mobile/android/app/src/main/res/mipmap-*/
