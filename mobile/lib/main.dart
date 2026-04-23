@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile/bindings/initial_binding.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/routes/routes.dart';
 
 void main() {
@@ -15,9 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Lecture Attendance',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: AppTheme.lightTheme,
       initialBinding: InitialBinding(),
       initialRoute: Routes.home,
       getPages: Routes.pages,
