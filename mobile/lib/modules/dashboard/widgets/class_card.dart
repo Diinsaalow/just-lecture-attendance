@@ -16,11 +16,12 @@ class ClassCard extends StatelessWidget {
     final primary = Theme.of(context).primaryColor;
     final borderColor = primary.withValues(alpha: 0.16);
     final dividerColor = primary.withValues(alpha: 0.10);
+    const radius = 12.0;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: borderColor, width: 0.8),
       ),
       child: Column(
@@ -31,7 +32,7 @@ class ClassCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: tintColor,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(18),
+                top: Radius.circular(radius),
               ),
             ),
             child: Column(

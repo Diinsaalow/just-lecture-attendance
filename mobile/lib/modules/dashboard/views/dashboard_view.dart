@@ -51,23 +51,25 @@ class DashboardView extends GetView<DashboardController> {
           Obx(() => ClassesSectionHeader(count: controller.sessions.length)),
           const SizedBox(height: 14),
           Obx(
-            () => ListView.separated(
+            () => GridView.builder(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               itemCount: controller.sessions.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final session = controller.sessions[i];
                 final tint = primary.withValues(alpha: 0.06);
 
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: ClassCard(
-                    session: session,
-                    tintColor: tint,
-                  ),
+                return ClassCard(
+                  session: session,
+                  tintColor: tint,
                 );
               },
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.98,
+              ),
             ),
           ),
         ],
