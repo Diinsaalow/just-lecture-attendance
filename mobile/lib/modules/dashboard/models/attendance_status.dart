@@ -1,0 +1,4 @@
+enum AttendanceStatus {
+  completed,
+  draft,
+}

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile/core/values/app_colors.dart';
 import 'package:mobile/modules/dashboard/controllers/dashboard_shell_controller.dart';
+import 'package:mobile/modules/dashboard/views/absence_request_view.dart';
+import 'package:mobile/modules/dashboard/views/attendance_history_view.dart';
 import 'package:mobile/modules/dashboard/views/dashboard_view.dart';
+import 'package:mobile/modules/dashboard/views/profile_view.dart';
 
 class DashboardShellView extends GetView<DashboardShellController> {
   const DashboardShellView({super.key});
@@ -11,9 +14,9 @@ class DashboardShellView extends GetView<DashboardShellController> {
   Widget build(BuildContext context) {
     final tabs = <Widget>[
       const DashboardView(),
-      const _AttendanceHistoryTab(),
-      const _AbsenceRequestTab(),
-      const _ProfileTab(),
+      const AttendanceHistoryView(),
+      const AbsenceRequestView(),
+      const ProfileView(),
     ];
 
     return Scaffold(
@@ -141,31 +144,4 @@ class _NavItem {
 
   final String label;
   final IconData icon;
-}
-
-class _AttendanceHistoryTab extends StatelessWidget {
-  const _AttendanceHistoryTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Attendance History')));
-  }
-}
-
-class _AbsenceRequestTab extends StatelessWidget {
-  const _AbsenceRequestTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Absence Request')));
-  }
-}
-
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Profile')));
-  }
 }
