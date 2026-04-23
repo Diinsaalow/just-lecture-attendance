@@ -55,7 +55,7 @@ class _BottomPillNavBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            top: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
+            top: BorderSide(color: AppColors.primary.withValues(alpha: 0.10)),
           ),
         ),
         child: Row(
@@ -91,8 +91,8 @@ class _BottomPillNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = AppColors.primary;
-    final inactiveColor = Colors.black.withValues(alpha: 0.55);
+    final pillColor = AppColors.secondary;
+    final inactiveColor = AppColors.primary.withValues(alpha: 0.55);
 
     return Material(
       color: Colors.transparent,
