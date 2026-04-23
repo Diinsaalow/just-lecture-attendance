@@ -18,10 +18,7 @@ class DashboardShellView extends GetView<DashboardShellController> {
 
     return Scaffold(
       body: Obx(
-        () => IndexedStack(
-          index: controller.index.value,
-          children: tabs,
-        ),
+        () => IndexedStack(index: controller.index.value, children: tabs),
       ),
       bottomNavigationBar: Obx(
         () => _BottomPillNavBar(
@@ -94,7 +91,7 @@ class _BottomPillNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = AppColors.secondary;
+    final pillColor = AppColors.primary;
     final inactiveColor = Colors.black.withValues(alpha: 0.55);
 
     return Material(
@@ -126,9 +123,9 @@ class _BottomPillNavItem extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ],
@@ -151,9 +148,7 @@ class _AttendanceHistoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Attendance History')),
-    );
+    return const Scaffold(body: Center(child: Text('Attendance History')));
   }
 }
 
@@ -162,9 +157,7 @@ class _AbsenceRequestTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Absence Request')),
-    );
+    return const Scaffold(body: Center(child: Text('Absence Request')));
   }
 }
 
@@ -173,9 +166,6 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Profile')),
-    );
+    return const Scaffold(body: Center(child: Text('Profile')));
   }
 }
-

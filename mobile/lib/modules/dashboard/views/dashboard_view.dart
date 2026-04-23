@@ -17,18 +17,9 @@ class DashboardView extends GetView<DashboardController> {
         elevation: 0,
         title: const Text(
           'Lecturer Dashboard',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
         ),
         iconTheme: const IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_vert),
-          ),
-        ],
       ),
       backgroundColor: Colors.white,
       body: ListView(
@@ -59,10 +50,7 @@ class DashboardView extends GetView<DashboardController> {
                 final session = controller.sessions[i];
                 final tint = primary.withValues(alpha: 0.06);
 
-                return ClassCard(
-                  session: session,
-                  tintColor: tint,
-                );
+                return ClassCard(session: session, tintColor: tint);
               },
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,

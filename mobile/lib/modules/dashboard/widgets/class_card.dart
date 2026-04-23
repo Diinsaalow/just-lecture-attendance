@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/modules/dashboard/models/class_session.dart';
 
 class ClassCard extends StatelessWidget {
-  const ClassCard({
-    super.key,
-    required this.session,
-    required this.tintColor,
-  });
+  const ClassCard({super.key, required this.session, required this.tintColor});
 
   final ClassSession session;
   final Color tintColor;
@@ -16,7 +12,7 @@ class ClassCard extends StatelessWidget {
     final primary = Theme.of(context).primaryColor;
     final borderColor = primary.withValues(alpha: 0.16);
     final dividerColor = primary.withValues(alpha: 0.10);
-    const radius = 12.0;
+    const radius = 8.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -69,7 +65,8 @@ class ClassCard extends StatelessWidget {
                       ),
                       child: Text(
                         session.courseCode,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
                               color: primary,
                               fontWeight: FontWeight.w700,
                             ),
@@ -83,10 +80,10 @@ class ClassCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.15,
-                      ),
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
                 ),
               ],
             ),
@@ -107,9 +104,9 @@ class ClassCard extends StatelessWidget {
                   child: Text(
                     session.daysOfWeek,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.black.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: Colors.black.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -120,4 +117,3 @@ class ClassCard extends StatelessWidget {
     );
   }
 }
-
