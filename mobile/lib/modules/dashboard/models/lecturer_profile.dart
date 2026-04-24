@@ -6,6 +6,8 @@ class LecturerProfile {
     required this.department,
     required this.email,
     required this.phone,
+    required this.city,
+    required this.country,
   });
 
   final String fullName;
@@ -14,4 +16,6 @@ class LecturerProfile {
   final String department;
   final String email;
   final String phone;
+  final String city;
+  final String country;
 }

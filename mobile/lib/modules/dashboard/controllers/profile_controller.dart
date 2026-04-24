@@ -3,14 +3,13 @@ import 'package:mobile/modules/dashboard/models/lecturer_profile.dart';
 
 class ProfileController extends GetxController {
   final profile = const LecturerProfile(
-    fullName: 'Dr. Amina Hassan',
-    initials: 'AH',
+    fullName: 'Eng. Mohamed Abdullahi',
+    initials: 'MA',
     role: 'Lecturer',
     department: 'Faculty of Information Technology',
-    email: 'amina.hassan@university.example.edu',
+    email: 'amina.hassan@just.edu.so',
     phone: '+252 61 000 0000',
+    city: 'Mogadishu',
+    country: 'Somalia',
   );
-
-  final emailReminders = false.obs;
-  final weekStartsOnMonday = true.obs;
 }

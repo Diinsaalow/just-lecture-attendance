@@ -19,7 +19,7 @@ class ClassCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: borderColor, width: 0.8),
       ),
@@ -86,7 +86,7 @@ class ClassCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.black,
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                     height: 1.15,
                   ),
@@ -113,7 +113,7 @@ class ClassCard extends StatelessWidget {
                       Text(
                         session.daysOfWeek,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.darkBackground.withValues(
+                          color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.82,
                           ),
                           fontWeight: FontWeight.w600,

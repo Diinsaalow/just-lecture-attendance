@@ -94,7 +94,7 @@ class _BottomPillNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = AppColors.secondary;
+    final pillColor = AppColors.primary;
     final inactiveColor = AppColors.primary.withValues(alpha: 0.55);
 
     return Material(

@@ -40,8 +40,14 @@ class ProfileView extends GetView<ProfileController> {
             surface: surface,
             children: [
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                leading: Icon(Icons.email_outlined, color: primary.withValues(alpha: 0.80)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 2,
+                ),
+                leading: Icon(
+                  Icons.email_outlined,
+                  color: primary.withValues(alpha: 0.80),
+                ),
                 title: Text(
                   'Email',
                   style: TextStyle(
@@ -60,8 +66,14 @@ class ProfileView extends GetView<ProfileController> {
               ),
               Divider(height: 1, color: primary.withValues(alpha: 0.10)),
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                leading: Icon(Icons.phone_outlined, color: primary.withValues(alpha: 0.80)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 2,
+                ),
+                leading: Icon(
+                  Icons.phone_outlined,
+                  color: primary.withValues(alpha: 0.80),
+                ),
                 title: Text(
                   'Phone',
                   style: TextStyle(
@@ -81,43 +93,36 @@ class ProfileView extends GetView<ProfileController> {
             ],
           ),
           const SizedBox(height: 18),
-          _SectionTitle(text: 'Preferences', primary: primary),
+          _SectionTitle(text: 'Location', primary: primary),
           const SizedBox(height: 8),
           _BorderedGroup(
             primary: primary,
             surface: surface,
             children: [
-              Obx(
-                () => SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  value: controller.emailReminders.value,
-                  activeThumbColor: AppColors.secondary,
-                  title: const Text('Email reminders'),
-                  subtitle: Text(
-                    'Coming soon',
-                    style: TextStyle(
-                      color: onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
-                    ),
-                  ),
-                  onChanged: (v) => controller.emailReminders.value = v,
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
                 ),
-              ),
-              Divider(height: 1, color: primary.withValues(alpha: 0.10)),
-              Obx(
-                () => SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  value: controller.weekStartsOnMonday.value,
-                  activeThumbColor: AppColors.secondary,
-                  title: const Text('Week starts on Monday'),
-                  subtitle: Text(
-                    'Local only',
-                    style: TextStyle(
-                      color: onSurface.withValues(alpha: 0.55),
-                      fontSize: 12,
-                    ),
+                leading: Icon(
+                  Icons.location_on_outlined,
+                  color: primary.withValues(alpha: 0.80),
+                ),
+                title: Text(
+                  'City',
+                  style: TextStyle(
+                    color: onSurface.withValues(alpha: 0.60),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-                  onChanged: (v) => controller.weekStartsOnMonday.value = v,
+                ),
+                subtitle: Text(
+                  controller.profile.city,
+                  style: TextStyle(
+                    color: onSurface,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -130,11 +135,17 @@ class ProfileView extends GetView<ProfileController> {
             surface: surface,
             children: [
               ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                leading: Icon(Icons.info_outline, color: primary.withValues(alpha: 0.80)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                leading: Icon(
+                  Icons.info_outline,
+                  color: primary.withValues(alpha: 0.80),
+                ),
                 title: const Text('App version'),
                 subtitle: Text(
-                  'Lecture Attendance 1.0.0+1',
+                  'JUST Lecturer Attendance 1.0.0',
                   style: TextStyle(
                     color: onSurface.withValues(alpha: 0.80),
                     fontWeight: FontWeight.w600,
@@ -152,7 +163,10 @@ class ProfileView extends GetView<ProfileController> {
               onTap: () => _showLogoutDialog(context),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 14,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
@@ -193,11 +207,18 @@ class ProfileView extends GetView<ProfileController> {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           title: const Text('Log out?'),
-          content: const Text('You are not signed in to a real account yet. This is a demo action.'),
+          content: const Text(
+            'You are not signed in to a real account yet. This is a demo action.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: TextStyle(color: AppColors.primary.withValues(alpha: 0.9))),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.primary.withValues(alpha: 0.9),
+                ),
+              ),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
@@ -252,7 +273,10 @@ class _ProfileHeader extends StatelessWidget {
             width: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: primary.withValues(alpha: 0.20), width: 1.2),
+              border: Border.all(
+                color: primary.withValues(alpha: 0.20),
+                width: 1.2,
+              ),
               color: primary.withValues(alpha: 0.10),
             ),
             alignment: Alignment.center,
@@ -278,7 +302,10 @@ class _ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: secondary.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(999),

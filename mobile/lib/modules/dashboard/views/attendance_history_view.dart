@@ -39,50 +39,44 @@ class AttendanceHistoryView extends GetView<AttendanceHistoryController> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        children: [
-          Obx(
-            () => _SummaryStrip(
+      body: Obx(
+        () => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+          children: [
+            _SummaryStrip(
               sessions: controller.sessionsThisWeek,
               avgPercent: controller.avgAttendancePercent,
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Recent sessions',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: primary,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 18),
+            Text(
+              'Recent sessions',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: primary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Obx(() {
-            if (controller.records.isEmpty) {
-              return _EmptyState(
+            const SizedBox(height: 10),
+            if (controller.records.isEmpty)
+              _EmptyState(
                 onSurface: onSurface,
                 primary: primary,
                 secondary: AppColors.secondary,
-              );
-            }
-            return Column(
-              children: controller.records
-                  .map(
-                    (r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _AttendanceRecordCard(
-                        record: r,
-                        primary: primary,
-                        surface: surface,
-                        onSurface: onSurface,
-                        theme: theme,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            );
-          }),
-        ],
+              )
+            else
+              ...controller.records.map(
+                (r) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _AttendanceRecordCard(
+                    record: r,
+                    primary: primary,
+                    surface: surface,
+                    onSurface: onSurface,
+                    theme: theme,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

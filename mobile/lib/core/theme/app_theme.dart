@@ -29,6 +29,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       primaryColor: colorScheme.primary,
+      secondaryHeaderColor: colorScheme.secondary,
       scaffoldBackgroundColor: colorScheme.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
