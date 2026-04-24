@@ -8,11 +8,6 @@ class ClassesSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
-    final secondary = Theme.of(context).secondaryHeaderColor;
-    final bg = secondary.withValues(alpha: 0.85);
-    final fg = primary;
-
     return Row(
       children: [
         Text(
