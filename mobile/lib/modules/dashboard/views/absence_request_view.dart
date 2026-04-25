@@ -77,10 +77,7 @@ class AbsenceRequestView extends GetView<AbsenceRequestController> {
             child: Obx(() {
               final list = controller.filteredRequests;
               if (list.isEmpty) {
-                return _EmptyList(
-                  secondary: secondary,
-                  onSurface: onSurface,
-                );
+                return _EmptyList(secondary: secondary, onSurface: onSurface);
               }
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
@@ -104,10 +101,7 @@ class AbsenceRequestView extends GetView<AbsenceRequestController> {
 }
 
 class _EmptyList extends StatelessWidget {
-  const _EmptyList({
-    required this.secondary,
-    required this.onSurface,
-  });
+  const _EmptyList({required this.secondary, required this.onSurface});
 
   final Color secondary;
   final Color onSurface;
@@ -184,7 +178,9 @@ class _RequestCard extends StatelessWidget {
             height: 3,
             decoration: BoxDecoration(
               color: _accentForStatus(request.status).withValues(alpha: 0.85),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(r)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(r),
+              ),
             ),
           ),
           Padding(
@@ -329,10 +325,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _NewRequestSheet {
-  static Future<void> show(
-    BuildContext context,
-    AbsenceRequestController c,
-  ) {
+  static Future<void> show(BuildContext context, AbsenceRequestController c) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -366,9 +359,9 @@ class _NewRequestSheet {
                 Text(
                   'Dummy form — no network. Fields map cleanly to a future API.',
                   style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(ctx).colorScheme.onSurface.withValues(
-                      alpha: 0.65,
-                    ),
+                    color: Theme.of(
+                      ctx,
+                    ).colorScheme.onSurface.withValues(alpha: 0.65),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -426,7 +419,8 @@ class _NewRequestSheet {
                             final now = DateTime.now();
                             final d = await showDatePicker(
                               context: ctx,
-                              initialDate: c.endDate.value ?? c.startDate.value ?? now,
+                              initialDate:
+                                  c.endDate.value ?? c.startDate.value ?? now,
                               firstDate: DateTime(now.year - 1),
                               lastDate: DateTime(now.year + 2),
                             );
@@ -443,40 +437,13 @@ class _NewRequestSheet {
                   minLines: 2,
                   maxLines: 4,
                   textInputAction: TextInputAction.done,
-                  decoration: _fieldDecoration('Reason', AppColors.primary).copyWith(
-                    alignLabelWithHint: true,
-                    hintText: 'Explain your absence (short summary)',
-                  ),
+                  decoration: _fieldDecoration('Reason', AppColors.primary)
+                      .copyWith(
+                        alignLabelWithHint: true,
+                        hintText: 'Explain your absence (short summary)',
+                      ),
                 ),
                 const SizedBox(height: 8),
-                InputDecorator(
-                  decoration: _fieldDecoration('Attachment (optional)', AppColors.primary)
-                      .copyWith(
-                    enabled: false,
-                    fillColor: Theme.of(ctx).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.35),
-                    filled: true,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.attach_file,
-                        size: 20,
-                        color: AppColors.primary.withValues(alpha: 0.40),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Upload disabled in demo',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(ctx)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 18),
                 FilledButton(
                   style: FilledButton.styleFrom(
