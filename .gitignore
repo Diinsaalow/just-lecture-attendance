@@ -7,9 +7,9 @@ Thumbs.db
 logs/
 
 # --- Env (secrets) ---
-.env
-.env.*
-!.env.example
+# .env
+# .env.*
+# !.env.example
 
 # --- Node / backend ---
 **/node_modules/
