@@ -8,6 +8,14 @@ export type Actions = 'create' | 'read' | 'update' | 'delete' | 'manage';
 // Create the ability type
 export type AppAbility = PureAbility<[Actions, Subjects]>;
 
+function isAdminRole(user: IUser): boolean {
+    if (typeof user.role === 'string') {
+        return user.role.toLowerCase() === 'admin';
+    }
+    const role = user.role as IRole | undefined;
+    return !!(role?.name && role.name.toLowerCase() === 'admin');
+}
+
 // Create ability from user permissions
 export function createAbilityForUser(user: IUser | null): AppAbility {
     const { can, build } = new AbilityBuilder<AppAbility>(PureAbility);
@@ -17,8 +25,14 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
         return build();
     }
 
-    // If user has a role object with abilities
-    if (typeof user.role === 'object' && user.role.ability) {
+    // Admin panel: full access until per-role abilities are wired to the API
+    if (isAdminRole(user)) {
+        can('manage', 'all');
+        return build();
+    }
+
+    // Non-admin: CASL rules from populated role (when present)
+    if (typeof user.role === 'object' && user.role?.ability?.length) {
         const role = user.role as IRole;
 
         role.ability.forEach((rule: IAbilityRule) => {
@@ -28,9 +42,6 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
             });
         });
     }
-
-    // If user has a role string, we could add role-based permissions here
-    // For now, we'll rely on the explicit ability rules
 
     return build();
 }

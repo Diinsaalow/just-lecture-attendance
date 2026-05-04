@@ -1,4 +1,4 @@
-import { Lock, LogOut, Mail, Settings, User } from 'lucide-react';
+import { Lock, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useGet2FAStatusQuery } from '../../store/api/authApi';
@@ -33,25 +33,16 @@ const UserDropdown = ({ isRtl }: UserDropdownProps) => {
                             <img className="rounded-md w-10 h-10 object-cover" src={user?.profileImage || '/logo192.png'} alt="userProfile" />
                             <div className="ltr:pl-4 rtl:pr-4 truncate">
                                 <h4 className="text-base text-gray-900 dark:text-gray-100">
-                                    {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'User'}
+                                    {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || user?.email || 'User'}
                                     <span className="text-xs bg-success-light dark:bg-success/20 rounded text-success dark:text-success-400 px-1 ltr:ml-2 rtl:ml-2">
-                                        {typeof user?.role === 'string' ? 'Role' : user?.role?.name}
+                                        {typeof user?.role === 'string' ? user.role : user?.role?.name}
                                     </span>
                                 </h4>
                                 <button type="button" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                                    {user?.email || 'user@example.com'}
+                                    {user?.username || user?.email || ''}
                                 </button>
                             </div>
                         </div>
-                    </li>
-                    <li>
-                        <Link
-                            to="/auth/profile"
-                            className="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-primary dark:hover:text-primary transition-colors duration-200"
-                        >
-                            <User className="w-4.5 h-4.5 ltr:mr-3 rtl:ml-3 shrink-0" />
-                            Profile
-                        </Link>
                     </li>
                     <li>
                         <Link

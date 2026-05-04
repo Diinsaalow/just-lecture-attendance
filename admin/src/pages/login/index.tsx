@@ -15,6 +15,7 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '../../store/slices/authSlice';
 import { useVerify2FAMutation, useVerify2FABackupCodeMutation } from '../../store/api/authApi';
 import { mapLoginResponseUser } from '../../utils/mapAuthUser';
+import { getPostLoginPath } from '../../utils/postLoginRedirect';
 
 const Login = () => {
     const { t } = useTranslation();
@@ -58,8 +59,8 @@ const Login = () => {
                 setRequires2FA(true);
                 setPendingUsername(data.username.trim().toLowerCase());
             } else {
-                // Otherwise proceed normally
-                navigate(redirectPath, { replace: true });
+                const mappedUser = result.data?.user ? mapLoginResponseUser(result.data.user) : null;
+                navigate(getPostLoginPath(mappedUser?.role, redirectPath), { replace: true });
             }
         } else {
             // Handle error
@@ -71,8 +72,9 @@ const Login = () => {
         try {
             const result = await verify2FA({ username: pendingUsername, token }).unwrap();
             if (result.accessToken && result.user) {
-                dispatch(setCredentials({ user: mapLoginResponseUser(result.user), token: result.accessToken }));
-                navigate(redirectPath, { replace: true });
+                const mappedUser = mapLoginResponseUser(result.user);
+                dispatch(setCredentials({ user: mappedUser, token: result.accessToken }));
+                navigate(getPostLoginPath(mappedUser.role, redirectPath), { replace: true });
                 return { success: true } as const;
             }
             return { success: false, error: t('two_factor.verification_failed') } as const;
@@ -86,8 +88,9 @@ const Login = () => {
         try {
             const result = await verifyBackupCode({ username: pendingUsername, backupCode }).unwrap();
             if (result.accessToken && result.user) {
-                dispatch(setCredentials({ user: mapLoginResponseUser(result.user), token: result.accessToken }));
-                navigate(redirectPath, { replace: true });
+                const mappedUser = mapLoginResponseUser(result.user);
+                dispatch(setCredentials({ user: mappedUser, token: result.accessToken }));
+                navigate(getPostLoginPath(mappedUser.role, redirectPath), { replace: true });
                 return { success: true } as const;
             }
             return { success: false, error: t('two_factor.backup_code_failed') } as const;

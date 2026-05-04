@@ -7,7 +7,7 @@ interface PublicRouteProps {
     redirectTo?: string;
 }
 
-const PublicRoute: React.FC<PublicRouteProps> = ({ children, redirectTo = '/dashboard' }) => {
+const PublicRoute: React.FC<PublicRouteProps> = ({ children, redirectTo = '/dashboard/system' }) => {
     const { isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
 
