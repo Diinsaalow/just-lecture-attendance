@@ -86,7 +86,7 @@ export const authApi = createApi({
             }),
             invalidatesTags: ['Auth'],
         }),
-        verify2FA: builder.mutation<IAuthResponse, { email: string; token: string }>({
+        verify2FA: builder.mutation<IAuthResponse, { username: string; token: string }>({
             query: (data) => ({
                 url: '/auth/2fa/verify',
                 method: 'POST',
@@ -94,7 +94,7 @@ export const authApi = createApi({
             }),
             invalidatesTags: ['Auth'],
         }),
-        verify2FABackupCode: builder.mutation<IAuthResponse, { email: string; backupCode: string }>({
+        verify2FABackupCode: builder.mutation<IAuthResponse, { username: string; backupCode: string }>({
             query: (data) => ({
                 url: '/auth/2fa/verify-backup-code',
                 method: 'POST',

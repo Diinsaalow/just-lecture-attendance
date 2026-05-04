@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Lock, ShieldCheck, User } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import TwoFactorVerification from './components/TwoFactorVerification';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../../store/slices/authSlice';
 import { useVerify2FAMutation, useVerify2FABackupCodeMutation } from '../../store/api/authApi';
+import { mapLoginResponseUser } from '../../utils/mapAuthUser';
 
 const Login = () => {
     const { t } = useTranslation();
@@ -24,7 +25,7 @@ const Login = () => {
     const [verify2FA] = useVerify2FAMutation();
     const [verifyBackupCode] = useVerify2FABackupCodeMutation();
     const [requires2FA, setRequires2FA] = useState(false);
-    const [userEmail, setUserEmail] = useState('');
+    const [pendingUsername, setPendingUsername] = useState('');
 
     // Get redirect URL from query parameters or location state
     const searchParams = new URLSearchParams(location.search);
@@ -39,19 +40,23 @@ const Login = () => {
         resolver: zodResolver(loginSchema),
         mode: 'onChange',
         defaultValues: {
-            email: '',
-            password: '',
+            username: '',
+            passcode: '',
+            rememberMe: false,
         },
     });
 
     const onSubmit = async (data: LoginFormData) => {
-        const result = await login(data);
+        const result = await login({
+            username: data.username.trim().toLowerCase(),
+            passcode: data.passcode,
+        });
 
         if (result.success) {
             // If backend indicates 2FA is required
-            if (result.data && 'requires2FA' in result.data && (result.data as any).requires2FA) {
+            if (result.data && 'requires2FA' in result.data && (result.data as { requires2FA?: boolean }).requires2FA) {
                 setRequires2FA(true);
-                setUserEmail(data.email);
+                setPendingUsername(data.username.trim().toLowerCase());
             } else {
                 // Otherwise proceed normally
                 navigate(redirectPath, { replace: true });
@@ -64,41 +69,43 @@ const Login = () => {
 
     const handle2FAVerify = async (token: string) => {
         try {
-            const result = await verify2FA({ email: userEmail, token }).unwrap();
+            const result = await verify2FA({ username: pendingUsername, token }).unwrap();
             if (result.accessToken && result.user) {
-                dispatch(setCredentials({ user: result.user, token: result.accessToken }));
+                dispatch(setCredentials({ user: mapLoginResponseUser(result.user), token: result.accessToken }));
                 navigate(redirectPath, { replace: true });
                 return { success: true } as const;
             }
             return { success: false, error: t('two_factor.verification_failed') } as const;
-        } catch (error: any) {
-            return { success: false, error: error?.data?.message || t('two_factor.invalid_code') } as const;
+        } catch (error: unknown) {
+            const err = error as { data?: { message?: string } };
+            return { success: false, error: err?.data?.message || t('two_factor.invalid_code') } as const;
         }
     };
 
     const handleBackupCodeVerify = async (backupCode: string) => {
         try {
-            const result = await verifyBackupCode({ email: userEmail, backupCode }).unwrap();
+            const result = await verifyBackupCode({ username: pendingUsername, backupCode }).unwrap();
             if (result.accessToken && result.user) {
-                dispatch(setCredentials({ user: result.user, token: result.accessToken }));
+                dispatch(setCredentials({ user: mapLoginResponseUser(result.user), token: result.accessToken }));
                 navigate(redirectPath, { replace: true });
                 return { success: true } as const;
             }
             return { success: false, error: t('two_factor.backup_code_failed') } as const;
-        } catch (error: any) {
-            return { success: false, error: error?.data?.message || t('two_factor.invalid_backup') } as const;
+        } catch (error: unknown) {
+            const err = error as { data?: { message?: string } };
+            return { success: false, error: err?.data?.message || t('two_factor.invalid_backup') } as const;
         }
     };
 
     const handleBack = () => {
         setRequires2FA(false);
-        setUserEmail('');
+        setPendingUsername('');
     };
 
     return (
         <>
             {requires2FA ? (
-                <TwoFactorVerification email={userEmail} onVerify={handle2FAVerify} onUseBackupCode={handleBackupCodeVerify} onBack={handleBack} />
+                <TwoFactorVerification username={pendingUsername} onVerify={handle2FAVerify} onUseBackupCode={handleBackupCodeVerify} onBack={handleBack} />
             ) : (
                 <LoginCover>
                     <div className="w-full h-full p-4 sm:p-6 md:p-8">
@@ -111,18 +118,18 @@ const Login = () => {
 
                                 <div className="space-y-5">
                                     <Controller
-                                        name="email"
+                                        name="username"
                                         control={control}
                                         render={({ field }) => (
                                             <FormInput
-                                                id="email"
-                                                type="email"
-                                                label={t('form.email.label')}
-                                                icon={Mail}
-                                                error={errors.email?.message || ''}
-                                                placeholder={t('form.email.placeholder')}
-                                                autoComplete="email"
-                                                aria-describedby="email-help"
+                                                id="username"
+                                                type="text"
+                                                label={t('form.username.label')}
+                                                icon={User}
+                                                error={errors.username?.message || ''}
+                                                placeholder={t('form.username.placeholder')}
+                                                autoComplete="username"
+                                                aria-describedby="username-help"
                                                 disabled={isLoginLoading}
                                                 className="dark:bg-[#232a3b] dark:text-gray-100 dark:placeholder-gray-500 border-gray-200 dark:border-gray-700 focus:border-primary dark:focus:border-primary-light transition-colors duration-200"
                                                 {...field}
@@ -131,18 +138,19 @@ const Login = () => {
                                     />
 
                                     <Controller
-                                        name="password"
+                                        name="passcode"
                                         control={control}
                                         render={({ field }) => (
                                             <FormInput
-                                                id="password"
+                                                id="passcode"
                                                 type="password"
-                                                label={t('form.password.label')}
+                                                label={t('form.passcode.label')}
                                                 icon={Lock}
-                                                error={errors.password?.message || ''}
-                                                placeholder={t('form.password.placeholder')}
+                                                error={errors.passcode?.message || ''}
+                                                placeholder={t('form.passcode.placeholder')}
                                                 autoComplete="current-password"
-                                                aria-describedby="password-help"
+                                                inputMode="numeric"
+                                                aria-describedby="passcode-help"
                                                 disabled={isLoginLoading}
                                                 className="dark:bg-[#232a3b] dark:text-gray-100 dark:placeholder-gray-500 border-gray-200 dark:border-gray-700 focus:border-primary dark:focus:border-primary-light transition-colors duration-200"
                                                 {...field}
@@ -198,11 +206,11 @@ const Login = () => {
                                     )}
                                 </button>
 
-                                <p id="email-help" className="sr-only">
-                                    {t('login.email_help')}
+                                <p id="username-help" className="sr-only">
+                                    {t('login.username_help')}
                                 </p>
-                                <p id="password-help" className="sr-only">
-                                    {t('login.password_help')}
+                                <p id="passcode-help" className="sr-only">
+                                    {t('login.passcode_help')}
                                 </p>
 
                                 <div className="pt-2 text-xs text-gray-500 dark:text-gray-400 text-center">

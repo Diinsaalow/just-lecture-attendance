@@ -190,8 +190,8 @@
         "login": "Login",
         "login_progress": "Signing in...",
         "forgot_password": "Forgot password?",
-        "email_help": "Enter your work email.",
-        "password_help": "Your password is case sensitive.",
+        "username_help": "Enter your account username.",
+        "passcode_help": "Your passcode is 6–9 digits.",
         "security_notice": "We use industry‑standard encryption to protect your data.",
         "login_failed": "Login failed. Please try again."
     },
@@ -219,13 +219,13 @@
         "invalid_backup": "Invalid backup code"
     },
     "form": {
-        "email": {
-            "label": "Email",
-            "placeholder": "admin@example.com"
+        "username": {
+            "label": "Username",
+            "placeholder": "Enter your username"
         },
-        "password": {
-            "label": "Password",
-            "placeholder": "Enter Password"
+        "passcode": {
+            "label": "Passcode",
+            "placeholder": "6–9 digits"
         }
     },
     "keywords": "Keywords",

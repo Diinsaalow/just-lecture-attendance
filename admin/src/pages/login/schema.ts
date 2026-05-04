@@ -1,8 +1,16 @@
 import { z } from 'zod';
 
+const passcodeRegex = /^\d{6,9}$/;
+
 export const loginSchema = z.object({
-    email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
-    password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+    username: z
+        .string()
+        .min(3, 'Username must be at least 3 characters')
+        .max(64, 'Username must be at most 64 characters'),
+    passcode: z
+        .string()
+        .min(1, 'Passcode is required')
+        .regex(passcodeRegex, 'Passcode must be 6–9 digits'),
     rememberMe: z.boolean().optional(),
 });
 

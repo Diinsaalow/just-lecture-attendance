@@ -189,8 +189,8 @@
         "login": "Soo gal",
         "login_progress": "Waxaan ku jirnaa soo gelitaanka...",
         "forgot_password": "Ma ilowday furaha sirta ah?",
-        "email_help": "Geli email-kaaga shaqada.",
-        "password_help": "Furaha sirta ahi waa mid xasaasi ah.",
+        "username_help": "Geli magaca isticmaalaha ee koontada.",
+        "passcode_help": "Lambarkaaga waa 6 ilaa 9 lambar.",
         "security_notice": "Waxaan isticmaalnaa koodhayn heer sare ah si aan u ilaalino xogtaada.",
         "login_failed": "Gelitaanku wuu fashilmay. Fadlan mar kale isku day."
     },
@@ -218,13 +218,13 @@
         "invalid_backup": "Koodhka kaydka ma aha mid sax ah"
     },
     "form": {
-        "email": {
-            "label": "Email",
-            "placeholder": "admin@example.com"
+        "username": {
+            "label": "Magaca isticmaalaha",
+            "placeholder": "Geli magaca isticmaalaha"
         },
-        "password": {
-            "label": "Furaha sirta ah",
-            "placeholder": "Geli Furaha Sirta"
+        "passcode": {
+            "label": "Lambarka sirta",
+            "placeholder": "6–9 lambar"
         }
     },
     "keywords": "Furaha Muhiimka ah",

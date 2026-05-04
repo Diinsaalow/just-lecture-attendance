@@ -4,6 +4,7 @@ import { AppDispatch, IRootState } from '../store';
 import { useGetUserInfoQuery, useLockSessionMutation, useLoginMutation, useLogoutMutation, useRefreshTokenMutation } from '../store/api/authApi';
 import { clearError, lockSession as lockSessionAction, logout, setCredentials, setError, setLoading, updateToken, updateUser } from '../store/slices/authSlice';
 import { IAuthResponse, ILoginCredentials, IUser } from '../types/auth';
+import { mapLoginResponseUser } from '../utils/mapAuthUser';
 
 export const useAuth = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -47,12 +48,13 @@ export const useAuth = () => {
 
             const result: IAuthResponse = await loginMutation(credentials).unwrap();
 
-            // Map the API response to our new structure - use accessToken as the main token
+            const user = mapLoginResponseUser(result.user);
+
             dispatch(
                 setCredentials({
-                    user: result.user,
+                    user,
                     token: result.accessToken,
-                })
+                }),
             );
 
             return { success: true, data: result };

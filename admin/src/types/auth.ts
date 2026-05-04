@@ -1,7 +1,6 @@
 export interface ILoginCredentials {
-    email: string;
-    password: string;
-    type?: 'dashboard' | 'mobile';
+    username: string;
+    passcode: string;
 }
 
 export interface IAbilityRule {
@@ -49,7 +48,8 @@ export interface IRole {
 
 export interface IUser {
     _id: string;
-    email: string;
+    username?: string;
+    email?: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
@@ -71,9 +71,10 @@ export interface IUser {
 
 export interface IAuthResponse {
     accessToken: string;
-    refreshToken: string;
-    user: IUser;
+    refreshToken?: string;
+    user: IUser | { id: string; username: string; role: string };
     message?: string;
+    requires2FA?: boolean;
 }
 
 export interface IApiError {

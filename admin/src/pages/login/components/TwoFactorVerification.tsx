@@ -12,13 +12,13 @@ const twoFactorSchema = z.object({
 type TwoFactorFormData = z.infer<typeof twoFactorSchema>;
 
 interface TwoFactorVerificationProps {
-    email: string;
+    username: string;
     onVerify: (token: string) => Promise<{ success: boolean; error?: string }>;
     onUseBackupCode: (backupCode: string) => Promise<{ success: boolean; error?: string }>;
     onBack: () => void;
 }
 
-const TwoFactorVerification = ({ email, onVerify, onUseBackupCode, onBack }: TwoFactorVerificationProps) => {
+const TwoFactorVerification = ({ username, onVerify, onUseBackupCode, onBack }: TwoFactorVerificationProps) => {
     const [useBackupCode, setUseBackupCode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [digits, setDigits] = useState<string[]>([]);
@@ -126,7 +126,7 @@ const TwoFactorVerification = ({ email, onVerify, onUseBackupCode, onBack }: Two
                         </div>
                         <div>
                             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Two-Factor Authentication</h1>
-                            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{email}</p>
+                            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{username}</p>
                         </div>
                     </div>
                 </div>

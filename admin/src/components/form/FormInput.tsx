@@ -11,7 +11,7 @@ interface FormInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
     disabled?: boolean;
 }
 
-const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({ label, icon: Icon, error, className = '', type = 'text', value, onChange, onBlur, disabled, ...props }, ref) => {
+const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({ label, icon: Icon, error, className = '', type = 'text', value, onChange, onBlur, disabled, inputMode, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -49,7 +49,7 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({ label, icon: I
                     {...props}
                     ref={ref}
                     type={type === 'number' ? 'text' : inputType}
-                    inputMode={type === 'number' ? 'decimal' : undefined}
+                    inputMode={type === 'number' ? 'decimal' : inputMode}
                     value={value}
                     onChange={type === 'number' ? handleNumberInput : (e) => onChange(e.target.value)}
                     onBlur={onBlur}
