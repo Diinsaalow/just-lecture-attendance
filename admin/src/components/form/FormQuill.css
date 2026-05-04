@@ -1,0 +1,101 @@
+/* Custom styles for Quill editor */
+.ql-editor {
+    min-height: 120px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+    padding: 12px 16px;
+}
+
+.dark .ql-editor {
+    color: #f9fafb;
+}
+
+.ql-toolbar {
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid #d1d5db !important;
+    background-color: #f9fafb;
+    padding: 8px 16px;
+}
+
+.dark .ql-toolbar {
+    background-color: #1f2937;
+    border-bottom-color: #4b5563 !important;
+}
+
+.ql-container {
+    border: none !important;
+    font-family: inherit;
+}
+
+.ql-editor.ql-blank::before {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.dark .ql-editor.ql-blank::before {
+    color: #6b7280;
+}
+
+/* Button styles */
+.ql-toolbar button {
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.ql-toolbar button:hover {
+    color: #374151;
+}
+
+.dark .ql-toolbar button {
+    color: #9ca3af;
+}
+
+.dark .ql-toolbar button:hover {
+    color: #f9fafb;
+}
+
+.ql-toolbar button.ql-active {
+    color: #3b82f6;
+}
+
+.dark .ql-toolbar button.ql-active {
+    color: #60a5fa;
+}
+
+/* Dropdown styles */
+.ql-toolbar .ql-picker {
+    color: #6b7280;
+}
+
+.dark .ql-toolbar .ql-picker {
+    color: #9ca3af;
+}
+
+.ql-toolbar .ql-picker-label {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.ql-toolbar .ql-picker-label:hover {
+    border-color: #d1d5db;
+}
+
+.dark .ql-toolbar .ql-picker-label:hover {
+    border-color: #4b5563;
+}
+
+/* Focus states */
+.ql-toolbar button:focus,
+.ql-toolbar .ql-picker-label:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.dark .ql-toolbar button:focus,
+.dark .ql-toolbar .ql-picker-label:focus {
+    outline-color: #60a5fa;
+}
