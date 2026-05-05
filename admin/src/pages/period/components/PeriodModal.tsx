@@ -1,5 +1,5 @@
 import React from 'react';
-import GenericModal from '../../../components/GenericModal';
+import GenericSidebar from '../../../components/GenericSidebar';
 import type { IPeriod } from '../../../types/period';
 import PeriodForm from './PeriodForm';
 
@@ -9,10 +9,17 @@ interface Props {
     itemToEdit?: IPeriod | null;
 }
 
+/** Same right-slide panel pattern as Settings → Roles (GenericSidebar). */
 const PeriodModal: React.FC<Props> = ({ isOpen, setIsOpen, itemToEdit }) => (
-    <GenericModal isOpen={isOpen} setIsOpen={setIsOpen} title={itemToEdit ? 'Edit Period' : 'New Period'} maxWidth="2xl">
+    <GenericSidebar
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title={itemToEdit ? 'Edit Period' : 'New Period'}
+        width="min(100vw, 48rem)"
+        closeButtonPosition="top-right"
+    >
         <PeriodForm itemToEdit={itemToEdit} onClose={() => setIsOpen(false)} />
-    </GenericModal>
+    </GenericSidebar>
 );
 
 export default PeriodModal;
