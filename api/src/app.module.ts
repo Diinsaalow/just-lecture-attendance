@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CaslModule } from './common/casl/casl.module';
+import { PoliciesGuard } from './common/casl/guards/policies.guard';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
@@ -24,6 +26,7 @@ import { PeriodModule } from './modules/period/period.module';
       envFilePath: ['.env'],
     }),
     DatabaseModule,
+    CaslModule,
     RolesModule,
     UsersModule,
     AuthModule,
@@ -37,6 +40,10 @@ import { PeriodModule } from './modules/period/period.module';
     PeriodModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PoliciesGuard },
+  ],
 })
 export class AppModule {}

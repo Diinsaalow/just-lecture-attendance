@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
+import { UserScopeService } from '../../common/casl/user-scope.service';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
@@ -19,6 +21,7 @@ export class SemesterService {
     @InjectModel(Semester.name)
     private readonly semesterModel: Model<SemesterDocument>,
     private readonly academicYearService: AcademicYearService,
+    private readonly userScopeService: UserScopeService,
   ) {}
 
   async create(
@@ -26,7 +29,12 @@ export class SemesterService {
     createdByUserId: string,
   ): Promise<Semester> {
     await this.academicYearService.ensureExists(dto.academicYearId);
-    const year = await this.academicYearService.findById(dto.academicYearId);
+    const year = await this.academicYearService.findByIdOrNull(
+      dto.academicYearId,
+    );
+    if (!year) {
+      throw new BadRequestException('Academic year not found');
+    }
     const start = new Date(dto.startDate);
     const end = new Date(dto.endDate);
     if (end <= start) {
@@ -48,26 +56,41 @@ export class SemesterService {
     });
   }
 
-  async findAllPaginated(q: TableQueryDto): Promise<PaginatedResult<Semester>> {
+  async findAllPaginated(
+    q: TableQueryDto,
+    user: AuthUserPayload,
+  ): Promise<PaginatedResult<Semester>> {
+    const baseMatch = await this.userScopeService.semesterMatch(user);
     return paginateFind<SemesterDocument>(this.semesterModel, q, {
       searchFields: ['name', 'status'],
       defaultSort: { startDate: -1 },
       populate: { path: 'academicYearId', select: 'name' },
+      baseMatch:
+        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
   async bulkRemove(
     ids: string[],
+    user: AuthUserPayload,
   ): Promise<{ deletedCount: number; message: string }> {
     const valid = ids.filter((id) => Types.ObjectId.isValid(id));
     if (!valid.length) {
       return { deletedCount: 0, message: 'No valid ids' };
     }
-    const r = await this.semesterModel.deleteMany({ _id: { $in: valid } });
+    const baseMatch = await this.userScopeService.semesterMatch(user);
+    const filter: Record<string, unknown> = {
+      _id: { $in: valid.map((id) => new Types.ObjectId(id)) },
+    };
+    if (Object.keys(baseMatch).length > 0) {
+      Object.assign(filter, baseMatch);
+    }
+    const r = await this.semesterModel.deleteMany(filter as never).exec();
     return { deletedCount: r.deletedCount ?? 0, message: 'Deleted' };
   }
 
-  async findById(id: string): Promise<Semester> {
+  async findById(id: string, user: AuthUserPayload): Promise<Semester> {
+    await this.userScopeService.ensureSemesterInScope(user, id);
     const doc = await this.findByIdOrNull(id);
     if (!doc) {
       throw new NotFoundException('Semester not found');
@@ -92,7 +115,12 @@ export class SemesterService {
     }
   }
 
-  async update(id: string, dto: UpdateSemesterDto): Promise<Semester> {
+  async update(
+    id: string,
+    dto: UpdateSemesterDto,
+    user: AuthUserPayload,
+  ): Promise<Semester> {
+    await this.userScopeService.ensureSemesterInScope(user, id);
     const existing = await this.findByIdOrNull(id);
     if (!existing) {
       throw new NotFoundException('Semester not found');
@@ -104,9 +132,12 @@ export class SemesterService {
       academicYearId = new Types.ObjectId(dto.academicYearId);
     }
 
-    const year = await this.academicYearService.findById(
+    const year = await this.academicYearService.findByIdOrNull(
       String(academicYearId),
     );
+    if (!year) {
+      throw new BadRequestException('Academic year not found');
+    }
 
     const start =
       dto.startDate !== undefined
@@ -144,7 +175,8 @@ export class SemesterService {
     return doc;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: AuthUserPayload): Promise<void> {
+    await this.userScopeService.ensureSemesterInScope(user, id);
     const doc = await this.semesterModel.findByIdAndDelete(id).exec();
     if (!doc) {
       throw new NotFoundException('Semester not found');

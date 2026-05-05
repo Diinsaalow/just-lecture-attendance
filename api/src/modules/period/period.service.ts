@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
+import { UserScopeService } from '../../common/casl/user-scope.service';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
@@ -24,9 +26,18 @@ export class PeriodService {
     private readonly lectureClassService: LectureClassService,
     private readonly courseService: CourseService,
     private readonly semesterService: SemesterService,
+    private readonly userScopeService: UserScopeService,
   ) {}
 
-  async create(dto: CreatePeriodDto, createdByUserId: string): Promise<Period> {
+  async create(
+    dto: CreatePeriodDto,
+    createdByUserId: string,
+    user: AuthUserPayload,
+  ): Promise<Period> {
+    await this.userScopeService.ensureLectureClassInScope(user, dto.classId);
+    await this.userScopeService.ensureCourseInScope(user, dto.courseId);
+    await this.userScopeService.ensureSemesterInScope(user, dto.semesterId);
+
     await this.lectureClassService.ensureExists(dto.classId);
     await this.courseService.ensureExists(dto.courseId);
     await this.semesterService.ensureExists(dto.semesterId);
@@ -48,7 +59,11 @@ export class PeriodService {
     });
   }
 
-  async findAllPaginated(q: TableQueryDto): Promise<PaginatedResult<Period>> {
+  async findAllPaginated(
+    q: TableQueryDto,
+    user: AuthUserPayload,
+  ): Promise<PaginatedResult<Period>> {
+    const baseMatch = await this.userScopeService.periodMatch(user);
     return paginateFind<PeriodDocument>(this.periodModel, q, {
       searchFields: ['day', 'type', 'from', 'to', 'status'],
       defaultSort: { createdAt: -1 },
@@ -58,21 +73,32 @@ export class PeriodService {
         { path: 'lecturerId', select: 'username' },
         { path: 'semesterId', select: 'name' },
       ],
+      baseMatch:
+        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
   async bulkRemove(
     ids: string[],
+    user: AuthUserPayload,
   ): Promise<{ deletedCount: number; message: string }> {
     const valid = ids.filter((id) => Types.ObjectId.isValid(id));
     if (!valid.length) {
       return { deletedCount: 0, message: 'No valid ids' };
     }
-    const r = await this.periodModel.deleteMany({ _id: { $in: valid } });
+    const baseMatch = await this.userScopeService.periodMatch(user);
+    const filter: Record<string, unknown> = {
+      _id: { $in: valid.map((id) => new Types.ObjectId(id)) },
+    };
+    if (Object.keys(baseMatch).length > 0) {
+      Object.assign(filter, baseMatch);
+    }
+    const r = await this.periodModel.deleteMany(filter as never).exec();
     return { deletedCount: r.deletedCount ?? 0, message: 'Deleted' };
   }
 
-  async findById(id: string): Promise<Period> {
+  async findById(id: string, user: AuthUserPayload): Promise<Period> {
+    await this.userScopeService.ensurePeriodInScope(user, id);
     const doc = await this.findByIdOrNull(id);
     if (!doc) {
       throw new NotFoundException('Period not found');
@@ -87,7 +113,12 @@ export class PeriodService {
     return this.periodModel.findById(id).exec();
   }
 
-  async update(id: string, dto: UpdatePeriodDto): Promise<Period> {
+  async update(
+    id: string,
+    dto: UpdatePeriodDto,
+    user: AuthUserPayload,
+  ): Promise<Period> {
+    await this.userScopeService.ensurePeriodInScope(user, id);
     const existing = await this.findByIdOrNull(id);
     if (!existing) {
       throw new NotFoundException('Period not found');
@@ -97,12 +128,15 @@ export class PeriodService {
     const courseId = dto.courseId ?? String(existing.courseId);
 
     if (dto.classId) {
+      await this.userScopeService.ensureLectureClassInScope(user, dto.classId);
       await this.lectureClassService.ensureExists(dto.classId);
     }
     if (dto.courseId) {
+      await this.userScopeService.ensureCourseInScope(user, dto.courseId);
       await this.courseService.ensureExists(dto.courseId);
     }
     if (dto.semesterId) {
+      await this.userScopeService.ensureSemesterInScope(user, dto.semesterId);
       await this.semesterService.ensureExists(dto.semesterId);
     }
     if (dto.lecturerId) {
@@ -136,7 +170,8 @@ export class PeriodService {
     return doc;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: AuthUserPayload): Promise<void> {
+    await this.userScopeService.ensurePeriodInScope(user, id);
     const doc = await this.periodModel.findByIdAndDelete(id).exec();
     if (!doc) {
       throw new NotFoundException('Period not found');
@@ -157,11 +192,13 @@ export class PeriodService {
     classId: string,
     courseId: string,
   ): Promise<void> {
-    const lectureClass = await this.lectureClassService.findById(classId);
-    const course = await this.courseService.findById(courseId);
-    if (
-      String(lectureClass.departmentId) !== String(course.departmentId)
-    ) {
+    const lectureClass =
+      await this.lectureClassService.findByIdOrNull(classId);
+    const course = await this.courseService.findByIdOrNull(courseId);
+    if (!lectureClass || !course) {
+      throw new BadRequestException('Class or course not found');
+    }
+    if (String(lectureClass.departmentId) !== String(course.departmentId)) {
       throw new BadRequestException(
         'Course and class must belong to the same department',
       );

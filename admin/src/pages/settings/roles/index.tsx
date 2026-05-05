@@ -1,11 +1,11 @@
 import { IconTrash } from '@tabler/icons-react';
 import { Plus } from 'lucide-react';
 import moment from 'moment';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import DataTableWithSidebar from '../../../components/DataTableWithSidebar';
 import { useConfirmDialog } from '../../../hooks/useConfirmDialog';
+import { usePermission } from '../../../hooks/usePermission';
 import { useSidebarDetail } from '../../../hooks/useSidebarDetail';
 import { IRole } from '../../../types';
 import { ColumnConfig } from '../../../types/columns';
@@ -15,7 +15,11 @@ import RoleModal from './components/RoleModal';
 import RolePermissionsSidebar from './components/RolePermissionsSidebar';
 
 const RoleList = () => {
-    const { t } = useTranslation();
+    const { hasPermission } = usePermission();
+    const canCreateRole = hasPermission('Role', 'create');
+    const canUpdateRole = hasPermission('Role', 'update');
+    const canDeleteRole = hasPermission('Role', 'delete');
+
     const [selectedRecords, setSelectedRecords] = useState<IRole[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [roleToEdit, setRoleToEdit] = useState<IRole | null>(null);
@@ -138,7 +142,8 @@ const RoleList = () => {
 
     const getRecordId = (record: IRole): number => parseInt(record._id, 10) || 0;
 
-    const columns: ColumnConfig<IRole>[] = [
+    const columns: ColumnConfig<IRole>[] = useMemo(
+        () => [
         {
             accessor: 'name',
             title: 'Name',
@@ -197,7 +202,7 @@ const RoleList = () => {
                     onClick: (record: IRole) => {
                         setViewRolePermissions(record);
                     },
-                    show: (record: IRole) => record.isDeletable !== false, // Only show if isDeletable is true or undefined
+                    show: (record: IRole) => canUpdateRole && record.isDeletable !== false,
                 },
                 {
                     type: 'view',
@@ -206,16 +211,25 @@ const RoleList = () => {
                 {
                     type: 'edit',
                     onClick: (record) => openEditModal(record),
-                    show: (record: IRole) => record.isDeletable !== false, // Only show if isDeletable is true or undefined
+                    show: (record: IRole) => canUpdateRole && record.isDeletable !== false,
                 },
                 {
                     type: 'delete',
                     onClick: (record: IRole) => handleDelete(record._id),
-                    show: (record: IRole) => record.isDeletable !== false, // Only show if isDeletable is true or undefined
+                    show: (record: IRole) => canDeleteRole && record.isDeletable !== false,
                 },
             ],
         },
-    ];
+    ],
+        [
+            canUpdateRole,
+            canDeleteRole,
+            handleViewRole,
+            openEditModal,
+            handleDelete,
+            setViewRolePermissions,
+        ]
+    );
 
     return (
         <div>
@@ -226,7 +240,7 @@ const RoleList = () => {
                 searchFields={['name', 'status']}
                 sortCol="createdAt"
                 query={{}}
-                rowSelectionEnabled={true}
+                rowSelectionEnabled={canDeleteRole}
                 onSelectionChange={setSelectedRecords}
                 searchable={true}
                 exportable={{
@@ -235,19 +249,25 @@ const RoleList = () => {
                     formats: ['csv', 'excel', 'pdf'],
                 }}
                 className="mt-0"
-                bulkActions={[
-                    {
-                        label: 'Delete Selected',
-                        icon: <IconTrash size={18} />,
-                        color: 'red',
-                        onClick: () => handleBulkDelete(),
-                    },
-                ]}
+                bulkActions={
+                    canDeleteRole
+                        ? [
+                              {
+                                  label: 'Delete Selected',
+                                  icon: <IconTrash size={18} />,
+                                  color: 'red',
+                                  onClick: () => handleBulkDelete(),
+                              },
+                          ]
+                        : []
+                }
                 buttons={
-                    <button type="button" className="btn btn-primary gap-2" onClick={openCreateModal}>
-                        <Plus size={16} />
-                        Add New
-                    </button>
+                    canCreateRole ? (
+                        <button type="button" className="btn btn-primary gap-2" onClick={openCreateModal}>
+                            <Plus size={16} />
+                            Add New
+                        </button>
+                    ) : undefined
                 }
                 showSidebar={showSidebar}
                 sidebarTitle="Role Details"

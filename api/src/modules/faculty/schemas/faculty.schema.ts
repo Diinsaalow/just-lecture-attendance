@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
 import { Campus } from '../../campus/schemas/campus.schema';
-import { User } from '../../users/schemas/user.schema';
 
 export type FacultyDocument = HydratedDocument<Faculty>;
 
@@ -24,7 +23,7 @@ export class Faculty {
   })
   status: EntityStatus;
 
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: Campus.name, required: true })

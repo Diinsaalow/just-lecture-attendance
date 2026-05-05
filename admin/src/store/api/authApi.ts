@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ILoginCredentials, IAuthResponse, IUser, ITwoFAStatus } from '../../types/auth';
 import { storageUtil } from '../../utils/storage';
+import { mapLoginResponseUser } from '../../utils/mapAuthUser';
 
 export const authApi = createApi({
     reducerPath: 'authApi',
@@ -33,6 +34,8 @@ export const authApi = createApi({
         }),
         getUserInfo: builder.query<IUser, void>({
             query: () => '/auth/me',
+            transformResponse: (response: Parameters<typeof mapLoginResponseUser>[0]) =>
+                mapLoginResponseUser(response),
             providesTags: ['Auth'],
         }),
         refreshToken: builder.mutation<{ accessToken: string }, { userId: string; refreshToken: string }>({

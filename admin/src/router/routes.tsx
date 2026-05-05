@@ -156,15 +156,15 @@ export const protectedRoutes: RouteConfig[] = [
         layout: 'default',
         isPublic: false,
         resource: 'Settings',
-        action: 'manage',
+        action: 'read',
         children: [
             {
                 path: 'roles',
                 element: <SettingsRoles />,
                 layout: 'default',
                 isPublic: false,
-                resource: 'Roles',
-                action: 'read',
+                resource: 'Role',
+                action: ['read', 'create', 'update', 'delete'],
             },
         ],
     },

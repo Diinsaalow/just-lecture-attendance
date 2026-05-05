@@ -142,7 +142,15 @@ export const useAuth = () => {
         lock,
 
         // Computed
-        hasRole: (role: string) => auth.user?.role === role,
-        isAdmin: auth.user?.role === 'admin',
+        hasRole: (role: string) => {
+            const r = auth.user?.role;
+            const name = typeof r === 'string' ? r : (r as { name?: string })?.name;
+            return name === role;
+        },
+        isAdmin: (() => {
+            const r = auth.user?.role;
+            const name = (typeof r === 'string' ? r : (r as { name?: string })?.name)?.toLowerCase();
+            return name === 'admin' || name === 'super-admin';
+        })(),
     };
 };

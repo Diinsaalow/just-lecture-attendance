@@ -14,10 +14,15 @@ import { IRole } from '../../../../types';
 // ---------------------- Schema & Types ----------------------
 const roleSchema = z.object({
     name: z.string().min(1, 'Name is required').max(255),
-    status: z.enum(['active', 'inactive', 'suspended']),
+    status: z.enum(['active', 'inactive']),
 });
 
 type RoleFormData = z.infer<typeof roleSchema>;
+
+/** API may send legacy `suspended`; form only edits active/inactive. */
+function normalizeRoleFormStatus(status?: string): 'active' | 'inactive' {
+    return status === 'inactive' ? 'inactive' : 'active';
+}
 
 interface RoleFormProps {
     roleToEdit?: IRole | null;
@@ -36,7 +41,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ roleToEdit, onClose }) => {
     const defaultValues = useMemo(
         (): RoleFormData => ({
             name: roleToEdit?.name || '',
-            status: roleToEdit?.status || 'active',
+            status: normalizeRoleFormStatus(roleToEdit?.status),
         }),
         [roleToEdit?.name, roleToEdit?.status]
     );
@@ -125,7 +130,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ roleToEdit, onClose }) => {
         if (roleToEdit) {
             reset({
                 name: roleToEdit.name,
-                status: roleToEdit.status || 'active',
+                status: normalizeRoleFormStatus(roleToEdit.status),
             });
         } else {
             // Reset to empty values when creating new role

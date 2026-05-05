@@ -10,6 +10,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { CheckPolicies } from '../../common/casl/guards/policies.guard';
+import {
+  CreateAcademicYearPolicy,
+  DeleteAcademicYearPolicy,
+  ReadAcademicYearPolicy,
+  UpdateAcademicYearPolicy,
+} from '../../common/casl/policies/access.policies';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
@@ -24,6 +31,7 @@ export class AcademicYearController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @CheckPolicies(CreateAcademicYearPolicy)
   create(
     @Body() dto: CreateAcademicYearDto,
     @CurrentUser() user: AuthUserPayload,
@@ -32,29 +40,38 @@ export class AcademicYearController {
   }
 
   @Get()
-  findAll(@Query() q: TableQueryDto) {
-    return this.academicYearService.findAllPaginated(q);
+  @CheckPolicies(ReadAcademicYearPolicy)
+  findAll(@Query() q: TableQueryDto, @CurrentUser() user: AuthUserPayload) {
+    return this.academicYearService.findAllPaginated(q, user);
   }
 
   @Delete('bulk/delete')
   @HttpCode(HttpStatus.OK)
-  bulkRemove(@Body() body: BulkIdsDto) {
-    return this.academicYearService.bulkRemove(body.ids);
+  @CheckPolicies(DeleteAcademicYearPolicy)
+  bulkRemove(@Body() body: BulkIdsDto, @CurrentUser() user: AuthUserPayload) {
+    return this.academicYearService.bulkRemove(body.ids, user);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.academicYearService.findById(id);
+  @CheckPolicies(ReadAcademicYearPolicy)
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    return this.academicYearService.findById(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateAcademicYearDto) {
-    return this.academicYearService.update(id, dto);
+  @CheckPolicies(UpdateAcademicYearPolicy)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAcademicYearDto,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.academicYearService.update(id, dto, user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.academicYearService.remove(id);
+  @CheckPolicies(DeleteAcademicYearPolicy)
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    await this.academicYearService.remove(id, user);
   }
 }

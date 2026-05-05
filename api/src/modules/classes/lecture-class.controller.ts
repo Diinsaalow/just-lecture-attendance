@@ -10,6 +10,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { CheckPolicies } from '../../common/casl/guards/policies.guard';
+import {
+  CreateLectureClassPolicy,
+  DeleteLectureClassPolicy,
+  ReadLectureClassPolicy,
+  UpdateLectureClassPolicy,
+} from '../../common/casl/policies/access.policies';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
@@ -24,37 +31,47 @@ export class LectureClassController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @CheckPolicies(CreateLectureClassPolicy)
   create(
     @Body() dto: CreateLectureClassDto,
     @CurrentUser() user: AuthUserPayload,
   ) {
-    return this.lectureClassService.create(dto, user.id);
+    return this.lectureClassService.create(dto, user.id, user);
   }
 
   @Get()
-  findAll(@Query() q: TableQueryDto) {
-    return this.lectureClassService.findAllPaginated(q);
+  @CheckPolicies(ReadLectureClassPolicy)
+  findAll(@Query() q: TableQueryDto, @CurrentUser() user: AuthUserPayload) {
+    return this.lectureClassService.findAllPaginated(q, user);
   }
 
   @Delete('bulk/delete')
   @HttpCode(HttpStatus.OK)
-  bulkRemove(@Body() body: BulkIdsDto) {
-    return this.lectureClassService.bulkRemove(body.ids);
+  @CheckPolicies(DeleteLectureClassPolicy)
+  bulkRemove(@Body() body: BulkIdsDto, @CurrentUser() user: AuthUserPayload) {
+    return this.lectureClassService.bulkRemove(body.ids, user);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.lectureClassService.findById(id);
+  @CheckPolicies(ReadLectureClassPolicy)
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    return this.lectureClassService.findById(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateLectureClassDto) {
-    return this.lectureClassService.update(id, dto);
+  @CheckPolicies(UpdateLectureClassPolicy)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateLectureClassDto,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.lectureClassService.update(id, dto, user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.lectureClassService.remove(id);
+  @CheckPolicies(DeleteLectureClassPolicy)
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    await this.lectureClassService.remove(id, user);
   }
 }

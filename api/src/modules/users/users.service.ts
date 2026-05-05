@@ -2,6 +2,8 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { UserScopeService } from '../../common/casl/user-scope.service';
+import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
@@ -11,17 +13,13 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 const BCRYPT_ROUNDS = 10;
 
-export type SafeUser = {
-  id: string;
-  username: string;
-  role: string;
-  isActive: boolean;
-};
+export type SafeUser = AuthUserPayload;
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly userScopeService: UserScopeService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserDocument> {
@@ -79,7 +77,12 @@ export class UsersService {
     }
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserDocument> {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    actor: AuthUserPayload,
+  ): Promise<UserDocument> {
+    await this.userScopeService.ensureUserInScope(actor, id);
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('User not found');
     }
@@ -120,7 +123,8 @@ export class UsersService {
     return updated;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actor: AuthUserPayload): Promise<void> {
+    await this.userScopeService.ensureUserInScope(actor, id);
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('User not found');
     }
@@ -130,9 +134,19 @@ export class UsersService {
     }
   }
 
-  async bulkRemove(ids: string[]): Promise<{ deletedCount: number }> {
-    const validIds = ids.filter(id => Types.ObjectId.isValid(id));
-    const result = await this.userModel.deleteMany({ _id: { $in: validIds } }).exec();
+  async bulkRemove(
+    ids: string[],
+    actor: AuthUserPayload,
+  ): Promise<{ deletedCount: number }> {
+    const validIds = ids.filter((id) => Types.ObjectId.isValid(id));
+    const baseMatch = await this.userScopeService.userMatch(actor);
+    const filter: Record<string, unknown> = {
+      _id: { $in: validIds.map((i) => new Types.ObjectId(i)) },
+    };
+    if (Object.keys(baseMatch).length > 0) {
+      Object.assign(filter, baseMatch);
+    }
+    const result = await this.userModel.deleteMany(filter as never).exec();
     return { deletedCount: result.deletedCount || 0 };
   }
 
@@ -150,12 +164,16 @@ export class UsersService {
       _id: Types.ObjectId;
       username: string;
       isActive: boolean;
-      role: { name: string };
+      facultyId?: Types.ObjectId;
+      role: { name: string; ability?: AuthUserPayload['role']['ability'] };
     };
 
     const row = await this.userModel
       .findOne({ _id: id, isActive: true })
-      .populate<{ name: string }>('role', 'name')
+      .populate<{ name: string; ability?: AuthUserPayload['role']['ability'] }>(
+        'role',
+        'name ability',
+      )
       .lean<LeanUser | null>();
 
     if (!row?.role?.name) {
@@ -165,8 +183,12 @@ export class UsersService {
     return {
       id: String(row._id),
       username: row.username,
-      role: row.role.name,
       isActive: row.isActive,
+      facultyId: row.facultyId ? String(row.facultyId) : undefined,
+      role: {
+        name: row.role.name,
+        ability: row.role.ability,
+      },
     };
   }
 
@@ -176,15 +198,20 @@ export class UsersService {
 
   async findAllPaginated(
     q: TableQueryDto,
+    user: AuthUserPayload,
   ): Promise<PaginatedResult<UserDocument>> {
+    const baseMatch = await this.userScopeService.userMatch(user);
     return paginateFind<UserDocument>(this.userModel, q, {
       searchFields: ['username', 'firstName', 'lastName', 'email'],
       defaultSort: { createdAt: -1 },
       populate: { path: 'role', select: 'name' },
+      baseMatch:
+        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
-  async findByIdSafe(id: string) {
+  async findByIdSafe(id: string, user: AuthUserPayload) {
+    await this.userScopeService.ensureUserInScope(user, id);
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('User not found');
     }

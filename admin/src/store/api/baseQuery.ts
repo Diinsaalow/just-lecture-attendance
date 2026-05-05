@@ -67,8 +67,20 @@ export const baseQueryWithToken: BaseQueryFn<string | FetchArgs, unknown, FetchB
         }
     }
 
-    // Log other error types for debugging
-    if (result.error && result.error.status !== 401) {
+    // Check if response is 403 Forbidden — user may lack permission
+    if (result.error && result.error.status === 403) {
+        const url = typeof args === 'string' ? args : args.url;
+        try {
+            const { toast } = await import('sonner');
+            toast.error('You do not have permission to perform this action.', {
+                description: typeof url === 'string' ? url : undefined,
+            });
+        } catch {
+            console.warn('403 Forbidden:', url);
+        }
+    }
+
+    if (result.error && result.error.status !== 401 && result.error.status !== 403) {
         const url = typeof args === 'string' ? args : args.url;
         console.warn(`API Error ${result.error.status} from ${url}:`, result.error);
     }

@@ -46,11 +46,16 @@ export async function paginateFind<TDoc>(
     searchFields: string[];
     defaultSort?: Record<string, 1 | -1>;
     populate?: PopulateOptions | PopulateOptions[] | string | string[];
+    /** Merged into the filter (e.g. tenant / role-based scope). */
+    baseMatch?: Record<string, unknown>;
   },
 ): Promise<PaginatedResult<TDoc>> {
   const page = Math.max(1, Number(q.options?.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(q.options?.limit) || 10));
-  const filter: Record<string, unknown> = {};
+  const clauses: Record<string, unknown>[] = [];
+  if (opts.baseMatch && Object.keys(opts.baseMatch).length > 0) {
+    clauses.push(opts.baseMatch);
+  }
 
   const keyword = q.search?.keyword?.trim();
   const requestedFields = normalizeFields(q.search?.fields as string[]);
@@ -60,10 +65,19 @@ export async function paginateFind<TDoc>(
       : opts.searchFields;
 
   if (keyword && searchOn.length > 0) {
-    (filter as Record<string, unknown>).$or = searchOn.map((field) => ({
-      [field]: new RegExp(escapeRegex(keyword), 'i'),
-    }));
+    clauses.push({
+      $or: searchOn.map((field) => ({
+        [field]: new RegExp(escapeRegex(keyword), 'i'),
+      })),
+    });
   }
+
+  const filter: Record<string, unknown> =
+    clauses.length === 0
+      ? {}
+      : clauses.length === 1
+        ? { ...clauses[0] }
+        : { $and: clauses };
 
   const defaultSort = opts.defaultSort ?? { createdAt: -1 };
   const sort = buildSort(q.options?.sort, defaultSort);

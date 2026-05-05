@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
+import { UserScopeService } from '../../common/casl/user-scope.service';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
@@ -20,9 +22,15 @@ export class CourseService {
     @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly departmentService: DepartmentService,
+    private readonly userScopeService: UserScopeService,
   ) {}
 
-  async create(dto: CreateCourseDto, createdByUserId: string): Promise<Course> {
+  async create(
+    dto: CreateCourseDto,
+    createdByUserId: string,
+    user: AuthUserPayload,
+  ): Promise<Course> {
+    await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
     await this.departmentService.ensureExists(dto.departmentId);
     const lecturerIds = await this.normalizeLecturerIds(dto.lecturers);
 
@@ -37,26 +45,41 @@ export class CourseService {
     });
   }
 
-  async findAllPaginated(q: TableQueryDto): Promise<PaginatedResult<Course>> {
+  async findAllPaginated(
+    q: TableQueryDto,
+    user: AuthUserPayload,
+  ): Promise<PaginatedResult<Course>> {
+    const baseMatch = await this.userScopeService.courseMatch(user);
     return paginateFind<CourseDocument>(this.courseModel, q, {
       searchFields: ['name', 'type', 'status'],
       defaultSort: { createdAt: -1 },
       populate: { path: 'departmentId', select: 'name' },
+      baseMatch:
+        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
   async bulkRemove(
     ids: string[],
+    user: AuthUserPayload,
   ): Promise<{ deletedCount: number; message: string }> {
     const valid = ids.filter((id) => Types.ObjectId.isValid(id));
     if (!valid.length) {
       return { deletedCount: 0, message: 'No valid ids' };
     }
-    const r = await this.courseModel.deleteMany({ _id: { $in: valid } });
+    const baseMatch = await this.userScopeService.courseMatch(user);
+    const filter: Record<string, unknown> = {
+      _id: { $in: valid.map((id) => new Types.ObjectId(id)) },
+    };
+    if (Object.keys(baseMatch).length > 0) {
+      Object.assign(filter, baseMatch);
+    }
+    const r = await this.courseModel.deleteMany(filter as never).exec();
     return { deletedCount: r.deletedCount ?? 0, message: 'Deleted' };
   }
 
-  async findById(id: string): Promise<Course> {
+  async findById(id: string, user: AuthUserPayload): Promise<Course> {
+    await this.userScopeService.ensureCourseInScope(user, id);
     const doc = await this.findByIdOrNull(id);
     if (!doc) {
       throw new NotFoundException('Course not found');
@@ -81,8 +104,14 @@ export class CourseService {
     }
   }
 
-  async update(id: string, dto: UpdateCourseDto): Promise<Course> {
+  async update(
+    id: string,
+    dto: UpdateCourseDto,
+    user: AuthUserPayload,
+  ): Promise<Course> {
+    await this.userScopeService.ensureCourseInScope(user, id);
     if (dto.departmentId) {
+      await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
       await this.departmentService.ensureExists(dto.departmentId);
     }
     let lecturerIds: Types.ObjectId[] | undefined;
@@ -108,7 +137,8 @@ export class CourseService {
     return doc;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: AuthUserPayload): Promise<void> {
+    await this.userScopeService.ensureCourseInScope(user, id);
     const doc = await this.courseModel.findByIdAndDelete(id).exec();
     if (!doc) {
       throw new NotFoundException('Course not found');

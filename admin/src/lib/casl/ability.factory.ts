@@ -1,65 +1,90 @@
 import { AbilityBuilder, PureAbility } from '@casl/ability';
 import { IUser, IRole, IAbilityRule } from '../../types/auth';
 
-// Define the subjects that can be acted upon
 export type Subjects = string;
 export type Actions = 'create' | 'read' | 'update' | 'delete' | 'manage';
 
-// Create the ability type
 export type AppAbility = PureAbility<[Actions, Subjects]>;
 
-function isAdminRole(user: IUser): boolean {
-    if (typeof user.role === 'string') {
-        return user.role.toLowerCase() === 'admin';
-    }
-    const role = user.role as IRole | undefined;
-    return !!(role?.name && role.name.toLowerCase() === 'admin');
+function normalizeRole(name: string): string {
+    const n = name.toLowerCase();
+    if (n === 'admin') return 'super-admin';
+    if (n === 'lecture') return 'instructor';
+    return n;
 }
 
-function isLectureRole(user: IUser): boolean {
+function isSuperAdminRole(user: IUser): boolean {
     if (typeof user.role === 'string') {
-        return user.role.toLowerCase() === 'lecture';
+        const n = normalizeRole(user.role);
+        return n === 'super-admin' || user.role.toLowerCase() === 'admin';
     }
     const role = user.role as IRole | undefined;
-    return !!(role?.name && role.name.toLowerCase() === 'lecture');
+    const nm = role?.name?.toLowerCase();
+    return nm === 'super-admin' || nm === 'admin';
 }
 
-// Create ability from user permissions
+/** Rules from API `/auth/login` → `user.abilities`, or role document when populated. */
+function rulesFromUser(user: IUser): IAbilityRule[] {
+    if (typeof user.role === 'object' && user.role?.ability?.length) {
+        return user.role.ability;
+    }
+    if (user.abilities?.length) {
+        return user.abilities;
+    }
+    return [];
+}
+
 export function createAbilityForUser(user: IUser | null): AppAbility {
     const { can, build } = new AbilityBuilder<AppAbility>(PureAbility);
 
     if (!user) {
-        // Guest user - no permissions
         return build();
     }
 
-    // Admin panel: full access until per-role abilities are wired to the API
-    if (isAdminRole(user)) {
-        can('manage', 'all');
-        return build();
-    }
-
-    if (isLectureRole(user)) {
-        can('manage', 'AcademicSetup');
-    }
-
-    // Non-admin: CASL rules from populated role (when present)
-    if (typeof user.role === 'object' && user.role?.ability?.length) {
-        const role = user.role as IRole;
-
-        role.ability.forEach((rule: IAbilityRule) => {
+    const explicit = rulesFromUser(user);
+    if (explicit.length > 0) {
+        explicit.forEach((rule: IAbilityRule) => {
             const actions = Array.isArray(rule.action) ? rule.action : [rule.action];
             actions.forEach((action) => {
                 can(action as Actions, rule.subject as Subjects);
             });
         });
+        return build();
+    }
+
+    const n = typeof user.role === 'string' ? normalizeRole(user.role) : normalizeRole((user.role as IRole)?.name ?? '');
+
+    if (isSuperAdminRole(user)) {
+        can('manage', 'all');
+        return build();
+    }
+
+    if (n === 'faculty-admin') {
+        can('manage', 'AcademicSetup');
+        can('read', 'Dashboard');
+        can('read', 'Report');
+        can('read', 'User');
+        can('create', 'User');
+        can('update', 'User');
+        can('read', 'Role');
+        can('read', 'Settings');
+        return build();
+    }
+
+    if (n === 'instructor') {
+        can('read', 'AcademicSetup');
+        can('read', 'Dashboard');
+        can('read', 'Report');
+        return build();
     }
 
     return build();
 }
 
-// Check if user can perform action on subject
 export function canUserPerformAction(user: IUser | null, action: Actions, subject: Subjects): boolean {
     const ability = createAbilityForUser(user);
+    if (ability.can('manage', 'all')) {
+        return true;
+    }
     return ability.can(action, subject);
 }

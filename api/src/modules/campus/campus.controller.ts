@@ -12,6 +12,13 @@ import {
 } from '@nestjs/common';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { CheckPolicies } from '../../common/casl/guards/policies.guard';
+import {
+  CreateCampusPolicy,
+  DeleteCampusPolicy,
+  ReadCampusPolicy,
+  UpdateCampusPolicy,
+} from '../../common/casl/policies/access.policies';
 import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { CampusService } from './campus.service';
@@ -24,6 +31,7 @@ export class CampusController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @CheckPolicies(CreateCampusPolicy)
   create(
     @Body() dto: CreateCampusDto,
     @CurrentUser() user: AuthUserPayload,
@@ -32,29 +40,38 @@ export class CampusController {
   }
 
   @Get()
-  findAll(@Query() q: TableQueryDto) {
-    return this.campusService.findAllPaginated(q);
+  @CheckPolicies(ReadCampusPolicy)
+  findAll(@Query() q: TableQueryDto, @CurrentUser() user: AuthUserPayload) {
+    return this.campusService.findAllPaginated(q, user);
   }
 
   @Delete('bulk/delete')
   @HttpCode(HttpStatus.OK)
-  bulkRemove(@Body() body: BulkIdsDto) {
-    return this.campusService.bulkRemove(body.ids);
+  @CheckPolicies(DeleteCampusPolicy)
+  bulkRemove(@Body() body: BulkIdsDto, @CurrentUser() user: AuthUserPayload) {
+    return this.campusService.bulkRemove(body.ids, user);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.campusService.findById(id);
+  @CheckPolicies(ReadCampusPolicy)
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    return this.campusService.findById(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateCampusDto) {
-    return this.campusService.update(id, dto);
+  @CheckPolicies(UpdateCampusPolicy)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCampusDto,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.campusService.update(id, dto, user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.campusService.remove(id);
+  @CheckPolicies(DeleteCampusPolicy)
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    await this.campusService.remove(id, user);
   }
 }

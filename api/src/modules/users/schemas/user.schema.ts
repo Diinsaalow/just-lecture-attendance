@@ -27,6 +27,10 @@ export class User {
   @Prop({ type: Types.ObjectId, ref: Role.name, required: true })
   role: Types.ObjectId;
 
+  /** When set, Faculty Admin / scoped instructors are limited to this faculty. */
+  @Prop({ type: Types.ObjectId, ref: 'Faculty' })
+  facultyId?: Types.ObjectId;
+
   @Prop({
     type: String,
     enum: ['active', 'inactive', 'suspended'],

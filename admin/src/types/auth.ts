@@ -59,6 +59,9 @@ export interface IUser {
     skills?: string[];
     socialLinks?: Array<{ platform: string; url: string }>;
     role: string | IRole;
+    /** From GET /auth/me or login — CASL rules when provided by API. */
+    abilities?: IAbilityRule[];
+    facultyId?: string;
     isEmailVerified: boolean;
     // Backend uses string status: 'active' | 'inactive' | 'suspended'
     status?: 'active' | 'inactive' | 'suspended';
@@ -72,7 +75,15 @@ export interface IUser {
 export interface IAuthResponse {
     accessToken: string;
     refreshToken?: string;
-    user: IUser | { id: string; username: string; role: string };
+    user:
+        | IUser
+        | {
+              id: string;
+              username: string;
+              role: string;
+              abilities?: IAbilityRule[];
+              facultyId?: string;
+          };
     message?: string;
     requires2FA?: boolean;
 }

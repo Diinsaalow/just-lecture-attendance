@@ -88,7 +88,7 @@ export const sidebarMenu: MenuItem[] = [
         icon: Settings,
         path: '/settings',
         resource: 'Settings',
-        action: 'manage',
+        action: 'read',
     },
 ];
 

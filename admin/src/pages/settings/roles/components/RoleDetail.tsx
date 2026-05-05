@@ -1,6 +1,6 @@
 import React from 'react';
 import moment from 'moment';
-import { IRole } from '../../../../types';
+import { IRole, IAbilityRule } from '../../../../types';
 import RoleDetailSkeleton from '../../../../components/skeleton/RoleDetailSkeleton';
 import { useGetRoleByIdQuery } from '../../../../store/api/roleApi';
 
@@ -23,9 +23,10 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId }) => {
         return <div className="p-6 text-center text-red-500">Failed to load role details</div>;
     }
 
+    const abilities = Array.isArray(role.ability) ? (role.ability as IAbilityRule[]) : [];
+
     return (
         <div className="p-6 space-y-6">
-            {/* Basic Information */}
             <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Role Information</h3>
                 <div className="space-y-3">
@@ -38,6 +39,10 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId }) => {
                         <p className="text-sm text-gray-900 dark:text-white">{role.status || '-'}</p>
                     </div>
                     <div>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Protected</label>
+                        <p className="text-sm text-gray-900 dark:text-white">{role.isDeletable === false ? 'Yes (system role)' : 'No'}</p>
+                    </div>
+                    <div>
                         <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</label>
                         <p className="text-sm text-gray-900 dark:text-white">{role.createdAt ? moment(role.createdAt).format('MMM DD, YYYY HH:mm') : '-'}</p>
                     </div>
@@ -48,19 +53,28 @@ const RoleDetail: React.FC<RoleDetailProps> = ({ roleId }) => {
                 </div>
             </div>
 
-            {/* Permissions */}
-            {Array.isArray((role as any).permissions) && (role as any).permissions.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permissions {(role as any).permissions.length ? `(${(role as any).permissions.length})` : ''}</h3>
-                </div>
-            )}
-
-            {(!(role as any).permissions || (role as any).permissions.length === 0) && (
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permissions</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No permissions assigned to this role.</p>
-                </div>
-            )}
+            <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    CASL abilities {abilities.length ? `(${abilities.length})` : ''}
+                </h3>
+                {abilities.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No abilities configured — defaults may apply from role templates on the server.</p>
+                ) : (
+                    <ul className="space-y-2 max-h-64 overflow-y-auto text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        {abilities.map((rule, idx) => {
+                            const actions = Array.isArray(rule.action) ? rule.action.join(', ') : String(rule.action);
+                            return (
+                                <li key={`${rule.subject}-${idx}`} className="font-mono text-xs text-gray-800 dark:text-gray-200">
+                                    <span className="text-primary">{actions}</span> → <span>{rule.subject}</span>
+                                    {rule.condition && Object.keys(rule.condition).length > 0 ? (
+                                        <span className="text-gray-500 ml-1">{JSON.stringify(rule.condition)}</span>
+                                    ) : null}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </div>
         </div>
     );
 };
