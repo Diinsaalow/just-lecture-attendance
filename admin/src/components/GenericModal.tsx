@@ -33,7 +33,7 @@ const GenericModal: React.FC<GenericModalProps> = ({ isOpen, setIsOpen, title, c
                 </TransitionChild>
 
                 <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-screen items-stretch sm:items-start justify-center px-0 sm:px-4">
+                    <div className="flex min-h-screen items-center justify-center px-0 sm:px-4 py-4">
                         <DialogPanel
                             className={`panel w-full ${maxWidthClasses[maxWidth]} sm:my-8 p-0 overflow-hidden rounded-none sm:rounded-2xl border border-gray-200 dark:border-[#232a3b] text-black dark:text-gray-100 bg-white dark:bg-[#1a2236] shadow-lg dark:shadow-[0_8px_32px_0_rgba(10,20,50,0.85)] animate__animated animate__slideInDown animate__faster h-screen sm:h-auto`}
                         >

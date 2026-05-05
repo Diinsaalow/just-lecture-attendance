@@ -6,7 +6,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 import { useEffect, useState } from 'react';
 import AnimateHeight from 'react-animate-height';
-import { sidebarMenu, filterMenuByPermissions, cleanEmptySections } from '../../lib/sidebar';
+import { sidebarMenu, filterMenuByPermissions, cleanEmptySections, pruneOrphanContentManagementSection } from '../../lib/sidebar';
 import { IRootState } from '../../store';
 import { toggleSidebar } from '../../store/themeConfigSlice';
 import { MenuItem } from '../../types/sidebar';
@@ -26,7 +26,7 @@ const Sidebar = () => {
     const homePage = authUtils.getHomePage(user, hasPermission);
 
     // Filter sidebar menu based on user permissions using resource and action
-    const filteredSidebarMenu = cleanEmptySections(filterMenuByPermissions(sidebarMenu, hasPermission));
+    const filteredSidebarMenu = pruneOrphanContentManagementSection(cleanEmptySections(filterMenuByPermissions(sidebarMenu, hasPermission)));
 
     // Toggle a menu's expanded state
     const toggleMenu = (menuId: string) => {

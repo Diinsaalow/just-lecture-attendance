@@ -2,7 +2,7 @@ export * from './api';
 export * from './auth';
 export * from './book';
 export * from './chapter';
-export * from './class';
+export * from './curriculumClass';
 export * from './columns';
 export * from './curriculum';
 export * from './enrollment';

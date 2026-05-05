@@ -1,0 +1,22 @@
+import type { EntityStatus } from './entity-status';
+import type { ILectureClass } from './lectureClass';
+import type { ICourse } from './course';
+import type { ISemester } from './semester';
+
+export type TimetablePeriodType = 'Lab' | 'Theory';
+
+export interface IPeriod {
+    _id: string;
+    classId: string | Pick<ILectureClass, '_id' | 'name'>;
+    courseId: string | Pick<ICourse, '_id' | 'name'>;
+    lecturerId: string | { _id: string; username?: string };
+    semesterId: string | Pick<ISemester, '_id' | 'name'>;
+    day: string;
+    type: TimetablePeriodType;
+    from: string;
+    to: string;
+    status: EntityStatus;
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}

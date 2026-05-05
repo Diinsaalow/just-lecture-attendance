@@ -16,6 +16,14 @@ function isAdminRole(user: IUser): boolean {
     return !!(role?.name && role.name.toLowerCase() === 'admin');
 }
 
+function isLectureRole(user: IUser): boolean {
+    if (typeof user.role === 'string') {
+        return user.role.toLowerCase() === 'lecture';
+    }
+    const role = user.role as IRole | undefined;
+    return !!(role?.name && role.name.toLowerCase() === 'lecture');
+}
+
 // Create ability from user permissions
 export function createAbilityForUser(user: IUser | null): AppAbility {
     const { can, build } = new AbilityBuilder<AppAbility>(PureAbility);
@@ -29,6 +37,10 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
     if (isAdminRole(user)) {
         can('manage', 'all');
         return build();
+    }
+
+    if (isLectureRole(user)) {
+        can('manage', 'AcademicSetup');
     }
 
     // Non-admin: CASL rules from populated role (when present)

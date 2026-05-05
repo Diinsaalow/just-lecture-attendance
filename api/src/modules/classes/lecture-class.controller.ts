@@ -8,9 +8,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { LectureClassService } from './lecture-class.service';
 import { CreateLectureClassDto } from './dto/create-lecture-class.dto';
 import { UpdateLectureClassDto } from './dto/update-lecture-class.dto';
@@ -29,8 +32,14 @@ export class LectureClassController {
   }
 
   @Get()
-  findAll() {
-    return this.lectureClassService.findAll();
+  findAll(@Query() q: TableQueryDto) {
+    return this.lectureClassService.findAllPaginated(q);
+  }
+
+  @Delete('bulk/delete')
+  @HttpCode(HttpStatus.OK)
+  bulkRemove(@Body() body: BulkIdsDto) {
+    return this.lectureClassService.bulkRemove(body.ids);
   }
 
   @Get(':id')

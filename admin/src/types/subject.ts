@@ -1,5 +1,5 @@
 import { IChapter } from './chapter';
-import { IClass } from './class';
+import { IClass } from './curriculumClass';
 import { IQuiz } from './quiz';
 
 export interface ISubject {

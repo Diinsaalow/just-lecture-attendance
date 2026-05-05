@@ -254,5 +254,12 @@
         "save": "Save",
         "updated_successfully": "Mobile settings updated successfully.",
         "failed_to_update": "Failed to update mobile settings."
-    }
+    },
+    "academic_year": "Academic year",
+    "campus_menu": "Campuses",
+    "faculty_menu": "Faculties",
+    "department_menu": "Departments",
+    "semester_menu": "Semesters",
+    "periods_menu": "Periods",
+    "classes_menu": "Classes"
 }

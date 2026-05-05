@@ -1,6 +1,20 @@
-import { LayoutDashboard, Users, Settings, MapPin } from 'lucide-react';
+import {
+    LayoutDashboard,
+    Users,
+    Settings,
+    MapPin,
+    GraduationCap,
+    CalendarDays,
+    Building2,
+    School,
+    Layers,
+    BookOpen,
+    Clock,
+} from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
+
+const academicActions = ['read', 'create', 'update', 'delete'] as string[];
 
 export const sidebarMenu: MenuItem[] = [
     {
@@ -9,6 +23,59 @@ export const sidebarMenu: MenuItem[] = [
         path: '/dashboard/system',
         resource: 'Dashboard',
         action: 'read',
+    },
+    {
+        title: 'content_management',
+        isSection: true,
+    },
+    {
+        title: 'academic_year',
+        icon: CalendarDays,
+        path: '/academic-years',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'campus_menu',
+        icon: Building2,
+        path: '/campuses',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'faculty_menu',
+        icon: School,
+        path: '/faculties',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'department_menu',
+        icon: Layers,
+        path: '/departments',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'semester_menu',
+        icon: BookOpen,
+        path: '/semesters',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'periods_menu',
+        icon: Clock,
+        path: '/periods',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'classes_menu',
+        icon: GraduationCap,
+        path: '/classes',
+        resource: 'AcademicSetup',
+        action: academicActions,
     },
     {
         title: 'users',
@@ -79,6 +146,22 @@ export const cleanEmptySections = (menuItems: MenuItem[]): MenuItem[] => {
     return cleaned;
 };
 
+const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|faculties|departments|semesters|periods|classes)(\/.*)?$/;
+
+/** Hide the content management section header if no academic pages remain after permission filtering. */
+export const pruneOrphanContentManagementSection = (menuItems: MenuItem[]): MenuItem[] => {
+    const idx = menuItems.findIndex((i) => i.isSection && i.title === 'content_management');
+    if (idx === -1) {
+        return menuItems;
+    }
+    const after = menuItems.slice(idx + 1);
+    const hasAcademic = after.some((i) => i.path && ACADEMIC_PATH_RE.test(i.path));
+    if (!hasAcademic) {
+        return menuItems.filter((_, i) => i !== idx);
+    }
+    return menuItems;
+};
+
 export const getFilteredMenuForUser = (userPermissions: Array<{ resource: string; action: string }>): MenuItem[] => {
     const mockHasPermission = (resource: string, action: string | string[]): boolean => {
         if (typeof action === 'string') {
@@ -87,5 +170,5 @@ export const getFilteredMenuForUser = (userPermissions: Array<{ resource: string
         return userPermissions.some((permission) => permission.resource === resource && action.includes(permission.action));
     };
 
-    return cleanEmptySections(filterMenuByPermissions(sidebarMenu, mockHasPermission));
+    return pruneOrphanContentManagementSection(cleanEmptySections(filterMenuByPermissions(sidebarMenu, mockHasPermission)));
 };

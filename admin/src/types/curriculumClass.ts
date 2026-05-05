@@ -1,5 +1,6 @@
 import { ILevel } from './level';
 
+/** Legacy curriculum "class" level (not the same as timetable `classes` / lecture cohort). */
 export interface IClass {
     _id: string;
     level: string | Partial<ILevel>;

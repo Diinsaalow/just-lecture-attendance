@@ -8,9 +8,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
@@ -29,8 +32,14 @@ export class DepartmentController {
   }
 
   @Get()
-  findAll() {
-    return this.departmentService.findAll();
+  findAll(@Query() q: TableQueryDto) {
+    return this.departmentService.findAllPaginated(q);
+  }
+
+  @Delete('bulk/delete')
+  @HttpCode(HttpStatus.OK)
+  bulkRemove(@Body() body: BulkIdsDto) {
+    return this.departmentService.bulkRemove(body.ids);
   }
 
   @Get(':id')

@@ -1,7 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
+import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
+import { paginateFind } from '../../common/utils/mongo-table-query';
 import { User, UserDocument } from './schemas/user.schema';
 
 const BCRYPT_ROUNDS = 10;
@@ -81,6 +84,31 @@ export class UsersService {
 
   async verifyPasscode(plain: string, passcodeHash: string): Promise<boolean> {
     return bcrypt.compare(plain, passcodeHash);
+  }
+
+  async findAllPaginated(
+    q: TableQueryDto,
+  ): Promise<PaginatedResult<UserDocument>> {
+    return paginateFind<UserDocument>(this.userModel, q, {
+      searchFields: ['username'],
+      defaultSort: { createdAt: -1 },
+      populate: { path: 'role', select: 'name' },
+    });
+  }
+
+  async findByIdSafe(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('User not found');
+    }
+    const doc = await this.userModel
+      .findById(id)
+      .select('-passcodeHash')
+      .populate('role', 'name')
+      .lean();
+    if (!doc) {
+      throw new NotFoundException('User not found');
+    }
+    return doc;
   }
 
   private isDuplicateKeyError(err: unknown): boolean {

@@ -8,9 +8,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { AcademicYearService } from './academic-year.service';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
@@ -29,8 +32,14 @@ export class AcademicYearController {
   }
 
   @Get()
-  findAll() {
-    return this.academicYearService.findAll();
+  findAll(@Query() q: TableQueryDto) {
+    return this.academicYearService.findAllPaginated(q);
+  }
+
+  @Delete('bulk/delete')
+  @HttpCode(HttpStatus.OK)
+  bulkRemove(@Body() body: BulkIdsDto) {
+    return this.academicYearService.bulkRemove(body.ids);
   }
 
   @Get(':id')

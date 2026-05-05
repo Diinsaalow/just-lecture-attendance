@@ -9,6 +9,13 @@ import Unauthorized from '../components/errors/Unauthorized';
 
 import Users from '../pages/user';
 import Locations from '../pages/location';
+import AcademicYears from '../pages/academic-year';
+import Campuses from '../pages/campus';
+import Faculties from '../pages/faculty';
+import Departments from '../pages/department';
+import Semesters from '../pages/semester';
+import Periods from '../pages/period';
+import Classes from '../pages/classes';
 
 import Settings from '../pages/settings';
 import SettingsRoles from '../pages/settings/roles';
@@ -92,6 +99,63 @@ export const protectedRoutes: RouteConfig[] = [
         layout: 'default',
         isPublic: false,
         resource: 'Location',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+
+    {
+        path: '/academic-years',
+        element: <AcademicYears />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/campuses',
+        element: <Campuses />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/faculties',
+        element: <Faculties />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/departments',
+        element: <Departments />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/semesters',
+        element: <Semesters />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/periods',
+        element: <Periods />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/classes',
+        element: <Classes />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
         action: ['read', 'create', 'update', 'delete'],
     },
 

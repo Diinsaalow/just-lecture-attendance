@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
+import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
+import { paginateFind } from '../../common/utils/mongo-table-query';
 import { CampusService } from '../campus/campus.service';
 import { Faculty, FacultyDocument } from './schemas/faculty.schema';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
@@ -29,8 +32,23 @@ export class FacultyService {
     });
   }
 
-  async findAll(): Promise<Faculty[]> {
-    return this.facultyModel.find().sort({ createdAt: -1 }).exec();
+  async findAllPaginated(q: TableQueryDto): Promise<PaginatedResult<Faculty>> {
+    return paginateFind<FacultyDocument>(this.facultyModel, q, {
+      searchFields: ['name', 'description', 'code', 'status'],
+      defaultSort: { createdAt: -1 },
+      populate: { path: 'campusId', select: 'campusName' },
+    });
+  }
+
+  async bulkRemove(
+    ids: string[],
+  ): Promise<{ deletedCount: number; message: string }> {
+    const valid = ids.filter((id) => Types.ObjectId.isValid(id));
+    if (!valid.length) {
+      return { deletedCount: 0, message: 'No valid ids' };
+    }
+    const r = await this.facultyModel.deleteMany({ _id: { $in: valid } });
+    return { deletedCount: r.deletedCount ?? 0, message: 'Deleted' };
   }
 
   async findById(id: string): Promise<Faculty> {

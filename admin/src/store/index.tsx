@@ -8,7 +8,14 @@ import { roleApi } from './api/roleApi';
 import { mediaApi } from './api/mediaApi';
 import { curriculumApi } from './api/curriculumApi';
 import { levelApi } from './api/levelApi';
-import { classApi } from './api/classApi';
+import { lectureClassApi } from './api/lectureClassApi';
+import { academicYearApi } from './api/academicYearApi';
+import { campusApi } from './api/campusApi';
+import { facultyApi } from './api/facultyApi';
+import { departmentApi } from './api/departmentApi';
+import { semesterApi } from './api/semesterApi';
+import { periodApi } from './api/periodApi';
+import { courseApi } from './api/courseApi';
 import { subjectApi } from './api/subjectApi';
 import { chapterApi } from './api/chapterApi';
 import { lessonApi } from './api/lessonApi';
@@ -43,7 +50,14 @@ const rootReducer = combineReducers({
     [mediaApi.reducerPath]: mediaApi.reducer,
     [curriculumApi.reducerPath]: curriculumApi.reducer,
     [levelApi.reducerPath]: levelApi.reducer,
-    [classApi.reducerPath]: classApi.reducer,
+    [lectureClassApi.reducerPath]: lectureClassApi.reducer,
+    [academicYearApi.reducerPath]: academicYearApi.reducer,
+    [campusApi.reducerPath]: campusApi.reducer,
+    [facultyApi.reducerPath]: facultyApi.reducer,
+    [departmentApi.reducerPath]: departmentApi.reducer,
+    [semesterApi.reducerPath]: semesterApi.reducer,
+    [periodApi.reducerPath]: periodApi.reducer,
+    [courseApi.reducerPath]: courseApi.reducer,
     [subjectApi.reducerPath]: subjectApi.reducer,
     [chapterApi.reducerPath]: chapterApi.reducer,
     [lessonApi.reducerPath]: lessonApi.reducer,
@@ -92,7 +106,14 @@ export const store = configureStore({
             mediaApi.middleware,
             curriculumApi.middleware,
             levelApi.middleware,
-            classApi.middleware,
+            lectureClassApi.middleware,
+            academicYearApi.middleware,
+            campusApi.middleware,
+            facultyApi.middleware,
+            departmentApi.middleware,
+            semesterApi.middleware,
+            periodApi.middleware,
+            courseApi.middleware,
             subjectApi.middleware,
             chapterApi.middleware,
             lessonApi.middleware,
