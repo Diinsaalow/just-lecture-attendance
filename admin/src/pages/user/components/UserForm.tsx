@@ -23,8 +23,8 @@ const userSchema = z
         password: z
             .string()
             .optional()
-            .refine((val) => !val || val.length >= 8, {
-                message: 'Password must be at least 8 characters',
+            .refine((val) => !val || val.length >= 4, {
+                message: 'Password must be at least 4 characters',
             }),
         password_confirmation: z.string().optional(),
         phone: z.string().optional().nullable(),
@@ -60,7 +60,7 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
     // Fetch roles from API with remote search using debounced query
     const debouncedRoleQuery = useDebounce(roleQuery, 300);
     const { data: rolesData, isLoading: rolesLoading } = useGetAllRolesQuery({
-        search: { keyword: debouncedRoleQuery, fields: ['name', 'status'] },
+        search: { keyword: debouncedRoleQuery, fields: ['name'] },
         options: { limit: 10, page: 1, sort: { name: 'asc' } },
     });
     const roles: RoleOption[] = (rolesData?.docs || []).map((role: IRole, index: number) => ({
@@ -97,6 +97,14 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
     const [updateUser] = useUpdateUserMutation();
 
     const handleMutationError = (error: any) => {
+        const httpStatus = error?.status ?? error?.data?.statusCode;
+        if (httpStatus === 409) {
+            const raw = error?.data?.message;
+            const msg = Array.isArray(raw) ? raw.join(', ') : typeof raw === 'string' ? raw : 'This email is already in use.';
+            setError('email', { type: 'server', message: msg });
+            return;
+        }
+
         // Handle specific MongoDB duplicate key errors
         if (error?.data?.code === 11000 || error?.code === 11000) {
             const keyValue = error?.data?.keyValue || error?.keyValue || {};
@@ -174,46 +182,64 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
 
     const onSubmit = async (data: UserFormData) => {
         try {
-            // Prepare payload - remove frontend-only fields
-            const { password_confirmation, ...payloadData } = data;
+            const emailNorm = data.email.trim().toLowerCase();
+            const roleId = typeof data.role === 'string' ? data.role.trim() : '';
 
-            let formData = {
-                ...payloadData,
-            } as any;
-
-            // Handle role field - convert empty string to null
-            if (formData.role === '') {
-                formData.role = null;
-            }
-
-            // Remove other empty-string fields
-            Object.keys(formData).forEach((key) => {
-                if (formData[key] === '' && key !== 'role') {
-                    delete formData[key];
+            if (!isEditMode) {
+                if (!data.password?.trim()) {
+                    setError('password', { type: 'manual', message: 'Password is required' });
+                    return;
                 }
-            });
-
-            // Remove empty password fields when updating
-            if (isEditMode && userToEdit) {
-                if (!data.password) {
-                    const { password, ...restData } = formData;
-                    await updateUser({ id: userToEdit._id, data: restData }).unwrap();
-                } else {
-                    await updateUser({ id: userToEdit._id, data: formData }).unwrap();
-                }
-                toast.success('User updated successfully');
-            } else {
-                // For create, ensure password is required
-                if (!data.password) {
-                    setError('password', {
-                        type: 'manual',
-                        message: 'Password is required',
-                    });
+                if (!/^[0-9a-fA-F]{24}$/.test(roleId)) {
+                    setError('role', { type: 'manual', message: 'Role is required' });
                     return;
                 }
 
-                await createUser(formData).unwrap();
+                const createBody: {
+                    firstName: string;
+                    lastName: string;
+                    email: string;
+                    password: string;
+                    role: string;
+                    status?: 'active' | 'inactive' | 'suspended';
+                    phone?: string;
+                } = {
+                    firstName: data.firstName.trim(),
+                    lastName: data.lastName.trim(),
+                    email: emailNorm,
+                    password: data.password.trim(),
+                    role: roleId,
+                };
+                if (data.status) {
+                    createBody.status = data.status;
+                }
+                const phoneTrim = data.phone?.trim();
+                if (phoneTrim) {
+                    createBody.phone = phoneTrim;
+                }
+
+                await createUser(createBody as any).unwrap();
                 toast.success('User created successfully');
+            } else if (userToEdit) {
+                const patch: Record<string, unknown> = {
+                    firstName: data.firstName.trim(),
+                    lastName: data.lastName.trim(),
+                    email: emailNorm,
+                    phone: data.phone?.trim() ?? '',
+                };
+                if (data.status) {
+                    patch.status = data.status;
+                }
+                if (/^[0-9a-fA-F]{24}$/.test(roleId)) {
+                    patch.role = roleId;
+                }
+                const pwd = data.password?.trim();
+                if (pwd) {
+                    patch.password = pwd;
+                }
+
+                await updateUser({ id: userToEdit._id, data: patch as any }).unwrap();
+                toast.success('User updated successfully');
             }
 
             handleClose();

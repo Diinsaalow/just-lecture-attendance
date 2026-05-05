@@ -75,8 +75,34 @@ export async function paginateFind<TDoc>(
     .skip(skip)
     .limit(limit)
     .lean();
+
+  const populations: any[] = [];
   if (opts.populate) {
-    query = query.populate(opts.populate as PopulateOptions | (string | PopulateOptions)[]);
+    if (Array.isArray(opts.populate)) {
+      populations.push(...opts.populate);
+    } else {
+      populations.push(opts.populate);
+    }
+  }
+
+  if (q.options?.populate) {
+    if (Array.isArray(q.options.populate)) {
+      populations.push(...q.options.populate);
+    } else {
+      populations.push(q.options.populate);
+    }
+  }
+
+  if ((q as any).populate) {
+    if (Array.isArray((q as any).populate)) {
+      populations.push(...(q as any).populate);
+    } else {
+      populations.push((q as any).populate);
+    }
+  }
+
+  if (populations.length > 0) {
+    query = query.populate(populations as any);
   }
   const [docs, totalDocs] = await Promise.all([
     query.exec() as Promise<TDoc[]>,

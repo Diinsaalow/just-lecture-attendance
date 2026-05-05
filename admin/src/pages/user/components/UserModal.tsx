@@ -7,11 +7,10 @@ interface UserModalProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
     userToEdit?: IUser | null;
-    userType: string;
 }
 
 // ---------------------- Component ----------------------
-const UserModal: React.FC<UserModalProps> = ({ isOpen, setIsOpen, userToEdit, userType }) => {
+const UserModal: React.FC<UserModalProps> = ({ isOpen, setIsOpen, userToEdit }) => {
     const isEditMode = Boolean(userToEdit);
 
     return (

@@ -38,7 +38,7 @@ export class AuthService {
     }
 
     const roleId = await this.rolesService.findIdByRoleName(role);
-    const user = await this.usersService.create({
+    const user = await this.usersService.registerWithPasscode({
       username: dto.username,
       passcode: dto.passcode,
       roleId,
@@ -95,6 +95,9 @@ export class AuthService {
   }
 
   private async buildToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: '1d',
+    });
   }
 }

@@ -17,9 +17,8 @@ export class RegisterDto {
   username: string;
 
   @IsString()
-  @Matches(/^\d{6,9}$/, {
-    message: 'passcode must be 6–9 digits',
-  })
+  @MinLength(8)
+  @MaxLength(16)
   passcode: string;
 
   @IsOptional()
@@ -35,8 +34,7 @@ export class LoginDto {
   username: string;
 
   @IsString()
-  @Matches(/^\d{6,9}$/, {
-    message: 'passcode must be 6–9 digits',
-  })
+  @MinLength(8)
+  @MaxLength(16)
   passcode: string;
 }

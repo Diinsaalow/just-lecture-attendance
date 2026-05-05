@@ -43,7 +43,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ userId }) => {
 
             <div className="transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-800 p-2 -mx-2 rounded-md">
                 <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Status</h4>
-                <p className="text-gray-700 dark:text-gray-300">{user.isActive ? 'Active' : 'Inactive'}</p>
+                <p className="text-gray-700 dark:text-gray-300 capitalize">{user.status || (user.isActive ? 'active' : 'inactive')}</p>
             </div>
 
             <div className="transition-all duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-800 p-2 -mx-2 rounded-md">

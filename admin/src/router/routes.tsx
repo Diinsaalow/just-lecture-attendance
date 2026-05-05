@@ -8,7 +8,6 @@ import LockScreen from '../pages/login/LockScreen';
 import Unauthorized from '../components/errors/Unauthorized';
 
 import Users from '../pages/user';
-import Locations from '../pages/location';
 import AcademicYears from '../pages/academic-year';
 import Campuses from '../pages/campus';
 import Faculties from '../pages/faculty';
@@ -91,14 +90,6 @@ export const protectedRoutes: RouteConfig[] = [
         layout: 'default',
         isPublic: false,
         resource: 'User',
-        action: ['read', 'create', 'update', 'delete'],
-    },
-    {
-        path: '/locations',
-        element: <Locations />,
-        layout: 'default',
-        isPublic: false,
-        resource: 'Location',
         action: ['read', 'create', 'update', 'delete'],
     },
 

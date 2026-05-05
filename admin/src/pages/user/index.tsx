@@ -1,64 +1,37 @@
 import moment from 'moment';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
-import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import Breadcrumb from '../../components/Breadcrumb';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useSidebarDetail } from '../../hooks/useSidebarDetail';
-import { AppDispatch } from '../../store';
-import { useBulkDeleteUsersMutation, useDeleteUserMutation, useGetAllUsersQuery, userApi } from '../../store/api/userApi';
-import { useGetAllStudentsQuery, useDeleteStudentMutation, useBulkDeleteStudentsMutation, useDownloadAllStudentsMutation, studentApi } from '../../store/api/studentApi';
-import { useGetAllInstructorsQuery, useDeleteInstructorMutation, useBulkDeleteInstructorsMutation, instructorApi } from '../../store/api/instructorApi';
+import { useBulkDeleteUsersMutation, useDeleteUserMutation, useGetAllUsersQuery } from '../../store/api/userApi';
 import { IUser } from '../../types/auth';
 import { ColumnConfig } from '../../types/columns';
 import UserModal from './components/UserModal';
 import DataTableWithSidebar from '../../components/DataTableWithSidebar';
 import { IconTrash } from '@tabler/icons-react';
-import { Download, Plus } from 'lucide-react';
-import { storageUtil } from '../../utils/storage';
+import { Plus } from 'lucide-react';
 import UserDetail from './components/UserDetail';
 
 const UserList = () => {
-    const { t } = useTranslation();
-    const dispatch = useDispatch<AppDispatch>();
     const [selectedRecords, setSelectedRecords] = useState<IUser[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<IUser | null>(null);
-
-    const location = useLocation();
-
-    // Determine listing type from URL: all | students | instructors (default: all)
-    const lastSegment = (location.pathname.split('/').pop() || 'all').toLowerCase();
-    const userType = ['all', 'students', 'instructors'].includes(lastSegment) ? lastSegment : 'all';
 
     // Use shared sidebar detail hook
     const { selectedId: selectedUserId, showSidebar, openSidebar, closeSidebar } = useSidebarDetail();
 
     const { confirmDelete } = useConfirmDialog();
 
-    // RTK Query hooks - use appropriate API based on user type
+    // RTK Query hooks
     const [deleteUser] = useDeleteUserMutation();
     const [bulkDeleteUsers] = useBulkDeleteUsersMutation();
-    const [deleteStudent] = useDeleteStudentMutation();
-    const [bulkDeleteStudents] = useBulkDeleteStudentsMutation();
-    const [deleteInstructor] = useDeleteInstructorMutation();
-    const [bulkDeleteInstructors] = useBulkDeleteInstructorsMutation();
 
-    // Delete mutation - use appropriate API based on user type
     const handleDeleteUser = async (id: string) => {
         try {
-            if (userType === 'students') {
-                await deleteStudent(id).unwrap();
-            } else if (userType === 'instructors') {
-                await deleteInstructor(id).unwrap();
-            } else {
-                await deleteUser(id).unwrap();
-            }
+            await deleteUser(id).unwrap();
             toast.success('User deleted successfully');
 
-            // If the deleted user was being viewed, close the sidebar
             if (selectedUserId) {
                 closeSidebar();
             }
@@ -67,20 +40,11 @@ const UserList = () => {
         }
     };
 
-    // Bulk Delete mutation - use appropriate API based on user type
     const handleBulkDeleteUsers = async (ids: string[]) => {
         try {
-            let result;
-            if (userType === 'students') {
-                result = await bulkDeleteStudents(ids).unwrap();
-            } else if (userType === 'instructors') {
-                result = await bulkDeleteInstructors(ids).unwrap();
-            } else {
-                result = await bulkDeleteUsers(ids).unwrap();
-            }
+            const result = await bulkDeleteUsers(ids).unwrap();
             toast.success(`${result.deletedCount} users deleted successfully`);
 
-            // If any deleted user was being viewed, close the sidebar
             if (selectedUserId) {
                 closeSidebar();
             }
@@ -121,27 +85,6 @@ const UserList = () => {
         setIsOpen(true);
     };
 
-    // RTK Query mutation for export
-    const [downloadStudents, { isLoading: isDownloading }] = useDownloadAllStudentsMutation();
-
-    const handleDownloadStudents = async () => {
-        try {
-            const result = await downloadStudents().unwrap();
-            const filename = `students-${new Date().toISOString().slice(0, 10)}.csv`;
-
-            const url = URL.createObjectURL(result);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        } catch (e: any) {
-            toast.error(e.message || 'Download failed');
-        }
-    };
-
     const openEditModal = (user: IUser) => {
         setUserToEdit(user);
         setIsOpen(true);
@@ -151,20 +94,9 @@ const UserList = () => {
         openSidebar(user._id);
     };
 
-    // Function to refresh data - use appropriate API based on user type
-    const refreshData = () => {
-        if (userType === 'students') {
-            dispatch(studentApi.util.invalidateTags(['students']));
-        } else if (userType === 'instructors') {
-            dispatch(instructorApi.util.invalidateTags(['instructors']));
-        } else {
-            dispatch(userApi.util.invalidateTags(['users']));
-        }
-    };
-
-    // Function to get record ID for bulk actions (convert string ID to number)
+    // Function to get record ID for bulk actions
     const getRecordId = (record: IUser): number => {
-        return parseInt(record._id, 10) || 0;
+        return (record as any).id || 0; // Or whatever numeric id if needed, otherwise string is fine for bulkDelete if handled
     };
 
     const columns: ColumnConfig<IUser>[] = [
@@ -173,9 +105,9 @@ const UserList = () => {
             title: 'First Name',
             type: 'text',
             sortable: true,
-            render: ({ firstName, lastName }) => (
+            render: ({ firstName, lastName, username }) => (
                 <div className="font-medium">
-                    {firstName || 'N/A'} {lastName || ''}
+                    {firstName || lastName ? `${firstName || ''} ${lastName || ''}` : username}
                 </div>
             ),
         },
@@ -184,12 +116,13 @@ const UserList = () => {
             title: 'Email',
             type: 'text',
             sortable: true,
+            render: ({ email, username }) => <div>{email || username}</div>,
         },
         {
             accessor: 'role',
             title: 'Role',
             type: 'text',
-            render: ({ role }) => <div>{typeof role == 'object' ? role.name : role}</div>,
+            render: ({ role }) => <div>{typeof role == 'object' ? (role as any).name : role}</div>,
         },
         {
             accessor: 'status',
@@ -199,6 +132,7 @@ const UserList = () => {
             options: [
                 { value: 'inactive', label: 'Inactive', color: 'danger' },
                 { value: 'active', label: 'Active', color: 'success' },
+                { value: 'suspended', label: 'Suspended', color: 'warning' },
             ],
         },
         {
@@ -239,16 +173,11 @@ const UserList = () => {
             <DataTableWithSidebar<IUser>
                 title="User Table"
                 columns={columns}
-                fetchData={userType === 'students' ? useGetAllStudentsQuery : userType === 'instructors' ? useGetAllInstructorsQuery : useGetAllUsersQuery}
-                searchFields={['firstName', 'lastName', 'email', 'status']}
+                fetchData={useGetAllUsersQuery}
+                searchFields={['firstName', 'lastName', 'email', 'username']}
                 sortCol="createdAt"
-                query={userType === 'all' ? {} : {}}
-                populate={[
-                    {
-                        path: 'role',
-                        dir: 'roles',
-                    },
-                ]}
+                query={{}}
+                populate={[{ path: 'role', select: 'name' }]}
                 rowSelectionEnabled={true}
                 onSelectionChange={setSelectedRecords}
                 searchable={true}
@@ -268,12 +197,6 @@ const UserList = () => {
                 ]}
                 buttons={
                     <>
-                        {userType === 'students' && (
-                            <button type="button" className="btn btn-secondary gap-2" onClick={handleDownloadStudents}>
-                                <Download size={16} />
-                                Download Students
-                            </button>
-                        )}
                         <button type="button" className="btn btn-primary gap-2" onClick={openCreateModal}>
                             <Plus size={16} />
                             Add New
@@ -288,7 +211,7 @@ const UserList = () => {
                 idAccessor="_id"
             />
 
-            <UserModal isOpen={isOpen} setIsOpen={setIsOpen} userToEdit={userToEdit} userType={userType === 'students' ? 'student' : userType === 'instructors' ? 'instructor' : 'user'} />
+            <UserModal isOpen={isOpen} setIsOpen={setIsOpen} userToEdit={userToEdit} />
         </div>
     );
 };

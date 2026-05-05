@@ -2,7 +2,6 @@ import {
     LayoutDashboard,
     Users,
     Settings,
-    MapPin,
     GraduationCap,
     CalendarDays,
     Building2,
@@ -82,13 +81,6 @@ export const sidebarMenu: MenuItem[] = [
         icon: Users,
         path: '/users',
         resource: 'User',
-        action: ['read', 'create', 'update', 'delete'],
-    },
-    {
-        title: 'locations',
-        icon: MapPin,
-        path: '/locations',
-        resource: 'Location',
         action: ['read', 'create', 'update', 'delete'],
     },
     {
