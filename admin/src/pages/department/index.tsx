@@ -57,6 +57,7 @@ const DepartmentList = () => {
     const columns: ColumnConfig<IDepartment>[] = [
         { accessor: 'name', title: 'Name', type: 'text', sortable: true },
         { accessor: 'facultyId', title: 'Faculty', type: 'text', sortable: false, render: (r) => <span>{facName(r)}</span> },
+        { accessor: 'duration', title: 'Duration', type: 'text', sortable: true },
         { accessor: 'abbreviation', title: 'Abbr', type: 'text', sortable: true },
         { accessor: 'degree', title: 'Degree', type: 'text', sortable: true },
         { accessor: 'status', title: 'Status', type: 'text', sortable: true },
