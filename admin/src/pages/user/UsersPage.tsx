@@ -188,7 +188,7 @@ const UsersPage = () => {
                 fetchData={useGetAllUsersQuery}
                 searchFields={['firstName', 'lastName', 'email', 'username']}
                 sortCol="createdAt"
-                query={{ variant: 'staff' }}
+                variant="staff"
                 populate={[{ path: 'role', select: 'name' }]}
                 rowSelectionEnabled={true}
                 onSelectionChange={setSelectedRecords}

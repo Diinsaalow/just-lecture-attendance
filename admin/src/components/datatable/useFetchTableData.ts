@@ -4,6 +4,8 @@ interface UseFetchTableDataProps<T> {
     title: string;
     fetchData: (param: IQueryParams) => any; // RTK Query hook
     query?: object;
+    /** Top-level API param (e.g. GET /users?variant=staff), not sent as `query[variant]`. */
+    variant?: IQueryParams['variant'];
     currentPage: number;
     rowsPerPage: number;
     search: string;
@@ -13,9 +15,21 @@ interface UseFetchTableDataProps<T> {
     sortDirection: string;
 }
 
-function useFetchTableData<T>({ title, fetchData, query = {}, currentPage, rowsPerPage, search, searchFields, populate = [], sortBy }: UseFetchTableDataProps<T>) {
+function useFetchTableData<T>({
+    title,
+    fetchData,
+    query = {},
+    variant,
+    currentPage,
+    rowsPerPage,
+    search,
+    searchFields,
+    populate = [],
+    sortBy,
+}: UseFetchTableDataProps<T>) {
     // Format parameters according to IQueryParams interface
     const params: IQueryParams = {
+        ...(variant !== undefined ? { variant } : {}),
         query,
         search: search && search.trim() !== '' ? { keyword: search, fields: searchFields } : undefined,
         options: {

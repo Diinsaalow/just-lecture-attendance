@@ -79,6 +79,14 @@ export class TableOptionsDto {
 }
 
 export class TableQueryDto {
+  /**
+   * Allowed so table GET requests can pass ad-hoc filters (e.g. `variant=staff` on GET /users)
+   * without failing `forbidNonWhitelisted`. Handled in controllers, not in `paginateFind`.
+   */
+  @IsOptional()
+  @IsString()
+  variant?: string;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => TableSearchDto)

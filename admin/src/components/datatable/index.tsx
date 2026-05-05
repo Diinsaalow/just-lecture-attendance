@@ -32,6 +32,8 @@ export interface CustomDataTableProps<T> {
     fetchData: (param: IQueryParams) => any; // RTK Query hook
     searchFields?: Array<string>;
     query?: Record<string, string | number | boolean | string[]> | object;
+    /** Passed as top-level `variant` query param (e.g. GET /users?variant=staff). */
+    variant?: IQueryParams['variant'];
     populate?: IPopulate[];
     buttons?: React.ReactNode;
     canExpand?: boolean;
@@ -58,6 +60,7 @@ function CustomDataTable<T>({
     columns: initialColumns,
     fetchData,
     query = {},
+    variant,
     searchFields = [],
     populate = [],
     exportable,
@@ -134,6 +137,7 @@ function CustomDataTable<T>({
         title,
         fetchData,
         query,
+        variant,
         currentPage: page,
         rowsPerPage: pageSize,
         search,

@@ -11,6 +11,8 @@ interface DataTableWithSidebarProps<T> {
     searchFields: string[];
     sortCol?: string;
     query?: Record<string, any>;
+    /** Top-level API query param (e.g. `variant=staff` on GET /users). */
+    variant?: IQueryParams['variant'];
     populate?: IPopulate[];
     rowSelectionEnabled?: boolean;
     onSelectionChange?: (records: T[]) => void;
@@ -45,6 +47,7 @@ const DataTableWithSidebar = <T,>({
     searchFields,
     sortCol = 'created_at',
     query = {},
+    variant,
     populate = [],
     rowSelectionEnabled = true,
     onSelectionChange,
@@ -72,6 +75,7 @@ const DataTableWithSidebar = <T,>({
                     searchFields={searchFields}
                     sortCol={sortCol}
                     query={query}
+                    variant={variant}
                     populate={populate}
                     rowSelectionEnabled={rowSelectionEnabled}
                     onSelectionChange={onSelectionChange}
