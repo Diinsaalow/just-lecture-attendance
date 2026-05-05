@@ -13,17 +13,44 @@ import { useGetAllCampusesQuery } from '../../../store/api/campusApi';
 import { useGetAllAcademicYearsQuery } from '../../../store/api/academicYearApi';
 import type { ILectureClass } from '../../../types/lectureClass';
 
-const schema = z.object({
-    name: z.string().min(1, 'Name is required'),
-    departmentId: z.string().min(1, 'Department is required'),
-    mode: z.string().min(1, 'Mode is required'),
-    shift: z.string().min(1, 'Shift is required'),
-    size: z.coerce.number().min(1, 'Min 1'),
-    campusId: z.string().min(1, 'Campus is required'),
-    batchId: z.string().min(1, 'Batch is required'),
-    academicYearId: z.string().min(1, 'Academic year is required'),
-    status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
-});
+const MODE_OPTIONS = [
+    { value: 'Part-time', label: 'Part-time' },
+    { value: 'Full time', label: 'Full time' },
+] as const;
+
+type ClassMode = (typeof MODE_OPTIONS)[number]['value'];
+
+const SHIFT_MORNING = 'Morning' as const;
+const SHIFT_AFTERNOON = 'Afternoon' as const;
+
+function coerceMode(raw: string): ClassMode {
+    const s = raw.trim().toLowerCase();
+    if (s.includes('part')) return 'Part-time';
+    return 'Full time';
+}
+
+function coerceShift(raw: string): typeof SHIFT_MORNING | typeof SHIFT_AFTERNOON {
+    const s = raw.trim().toLowerCase();
+    if (s.includes('after')) return SHIFT_AFTERNOON;
+    return SHIFT_MORNING;
+}
+
+const schema = z
+    .object({
+        name: z.string().min(1, 'Name is required'),
+        departmentId: z.string().min(1, 'Department is required'),
+        mode: z.enum(['Part-time', 'Full time']),
+        shift: z.enum([SHIFT_MORNING, SHIFT_AFTERNOON]),
+        size: z.coerce.number().min(1, 'Min 1'),
+        campusId: z.string().min(1, 'Campus is required'),
+        batchId: z.string().min(1, 'Batch is required'),
+        academicYearId: z.string().min(1, 'Academic year is required'),
+        status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+    })
+    .refine(
+        (data) => (data.mode === 'Part-time' ? data.shift === SHIFT_MORNING : true),
+        { message: 'Part-time is only offered in the Morning shift', path: ['shift'] },
+    );
 
 type FormData = z.infer<typeof schema>;
 
@@ -46,14 +73,16 @@ const LectureClassForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         control,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
             name: '',
             departmentId: '',
-            mode: '',
-            shift: '',
+            mode: 'Full time',
+            shift: SHIFT_MORNING,
             size: 1,
             campusId: '',
             batchId: '',
@@ -62,21 +91,50 @@ const LectureClassForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         },
     });
 
+    const mode = watch('mode');
+
+    const shiftOpts = useMemo(() => {
+        if (mode === 'Part-time') {
+            return [{ value: SHIFT_MORNING, label: SHIFT_MORNING }];
+        }
+        return [
+            { value: SHIFT_MORNING, label: SHIFT_MORNING },
+            { value: SHIFT_AFTERNOON, label: SHIFT_AFTERNOON },
+        ];
+    }, [mode]);
+
     const [createItem] = useCreateLectureClassMutation();
     const [updateItem] = useUpdateLectureClassMutation();
 
     useEffect(() => {
         if (itemToEdit) {
+            const coercedMode = coerceMode(itemToEdit.mode);
+            let coercedShift = coerceShift(itemToEdit.shift);
+            if (coercedMode === 'Part-time' && coercedShift === SHIFT_AFTERNOON) {
+                coercedShift = SHIFT_MORNING;
+            }
             reset({
                 name: itemToEdit.name,
                 departmentId: typeof itemToEdit.departmentId === 'string' ? itemToEdit.departmentId : itemToEdit.departmentId._id,
-                mode: itemToEdit.mode,
-                shift: itemToEdit.shift,
+                mode: coercedMode,
+                shift: coercedShift,
                 size: itemToEdit.size,
                 campusId: typeof itemToEdit.campusId === 'string' ? itemToEdit.campusId : itemToEdit.campusId._id,
                 batchId: itemToEdit.batchId,
                 academicYearId: typeof itemToEdit.academicYearId === 'string' ? itemToEdit.academicYearId : itemToEdit.academicYearId._id,
                 status: itemToEdit.status,
+            });
+        } else {
+            reset({
+                name: '',
+                departmentId: '',
+                mode: 'Full time',
+                shift: SHIFT_MORNING,
+                size: 1,
+                campusId: '',
+                batchId: '',
+                academicYearId: '',
+                status: 'ACTIVE',
             });
         }
     }, [itemToEdit, reset]);
@@ -107,8 +165,43 @@ const LectureClassForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect id="lc-dep" label="Department" value={value} onChange={onChange} onBlur={onBlur} options={depOpts} error={errors.departmentId?.message} disabled={isSubmitting} />
                 )}
             />
-            <Controller name="mode" control={control} render={({ field }) => <FormInput id="lc-mode" label="Mode" error={errors.mode?.message} disabled={isSubmitting} {...field} />} />
-            <Controller name="shift" control={control} render={({ field }) => <FormInput id="lc-shift" label="Shift" error={errors.shift?.message} disabled={isSubmitting} {...field} />} />
+            <Controller
+                name="mode"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="lc-mode"
+                        label="Mode"
+                        value={value}
+                        onChange={(v) => {
+                            onChange(v);
+                            if (v === 'Part-time') {
+                                setValue('shift', SHIFT_MORNING, { shouldValidate: true });
+                            }
+                        }}
+                        onBlur={onBlur}
+                        options={[...MODE_OPTIONS]}
+                        error={errors.mode?.message}
+                        disabled={isSubmitting}
+                    />
+                )}
+            />
+            <Controller
+                name="shift"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="lc-shift"
+                        label="Shift"
+                        value={value || ''}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={shiftOpts}
+                        error={errors.shift?.message}
+                        disabled={isSubmitting || !mode}
+                    />
+                )}
+            />
             <Controller
                 name="size"
                 control={control}
