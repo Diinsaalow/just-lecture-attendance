@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { AuthUserPayload } from '../decorators/current-user.decorator';
 import { normalizeRoleName } from './role-ability-templates';
+import { Hall, HallDocument } from '../../modules/hall/schemas/hall.schema';
 import { Campus, CampusDocument } from '../../modules/campus/schemas/campus.schema';
 import { Faculty, FacultyDocument } from '../../modules/faculty/schemas/faculty.schema';
 import { Department, DepartmentDocument } from '../../modules/department/schemas/department.schema';
@@ -18,6 +19,7 @@ const emptyMatch = { _id: { $exists: false } };
 export class UserScopeService {
   constructor(
     @InjectModel(Campus.name) private readonly campusModel: Model<CampusDocument>,
+    @InjectModel(Hall.name) private readonly hallModel: Model<HallDocument>,
     @InjectModel(Faculty.name)
     private readonly facultyModel: Model<FacultyDocument>,
     @InjectModel(Department.name)
@@ -61,6 +63,26 @@ export class UserScopeService {
     if (this.isInstructor(user)) {
       const ids = await this.instructorCampusIds(user.id);
       return ids.length ? { _id: { $in: ids } } : emptyMatch;
+    }
+    return emptyMatch;
+  }
+
+  /** Halls live under campuses — same campus visibility as `campusMatch` but filters `campusId` on Hall. */
+  async hallMatch(user: AuthUserPayload): Promise<Record<string, unknown>> {
+    if (this.isSuperAdmin(user)) return {};
+    if (this.isFacultyAdmin(user) && user.facultyId) {
+      const fac = await this.facultyModel
+        .findById(user.facultyId)
+        .select('campusId')
+        .lean();
+      if (fac?.campusId) {
+        return { campusId: fac.campusId };
+      }
+      return emptyMatch;
+    }
+    if (this.isInstructor(user)) {
+      const ids = await this.instructorCampusIds(user.id);
+      return ids.length ? { campusId: { $in: ids } } : emptyMatch;
     }
     return emptyMatch;
   }
@@ -197,6 +219,13 @@ export class UserScopeService {
     campusId: string,
   ): Promise<void> {
     await this.ensureRow(this.campusModel, campusId, () => this.campusMatch(user));
+  }
+
+  async ensureHallInScope(
+    user: AuthUserPayload,
+    hallId: string,
+  ): Promise<void> {
+    await this.ensureRow(this.hallModel, hallId, () => this.hallMatch(user));
   }
 
   async ensureFacultyInScope(

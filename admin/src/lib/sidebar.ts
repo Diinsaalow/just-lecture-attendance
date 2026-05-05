@@ -10,6 +10,7 @@ import {
     BookOpen,
     Library,
     Clock,
+    MapPinned,
 } from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
@@ -40,6 +41,13 @@ export const sidebarMenu: MenuItem[] = [
         icon: Building2,
         path: '/campuses',
         resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'halls_menu',
+        icon: MapPinned,
+        path: '/halls',
+        resource: 'Hall',
         action: academicActions,
     },
     {
@@ -159,7 +167,7 @@ export const cleanEmptySections = (menuItems: MenuItem[]): MenuItem[] => {
     return cleaned;
 };
 
-const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|faculties|departments|semesters|courses|periods|classes)(\/.*)?$/;
+const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|halls|faculties|departments|semesters|courses|periods|classes)(\/.*)?$/;
 
 /** Hide the content management section header if no academic pages remain after permission filtering. */
 export const pruneOrphanContentManagementSection = (menuItems: MenuItem[]): MenuItem[] => {

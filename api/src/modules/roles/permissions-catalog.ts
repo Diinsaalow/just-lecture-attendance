@@ -13,6 +13,7 @@ const SUBJECTS_FOR_MATRIX: string[] = [
   Subject.AcademicSetup,
   Subject.AcademicYear,
   Subject.Campus,
+  Subject.Hall,
   Subject.Faculty,
   Subject.Department,
   Subject.Semester,

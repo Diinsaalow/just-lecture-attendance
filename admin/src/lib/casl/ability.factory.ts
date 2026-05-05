@@ -57,6 +57,7 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
 
     if (n === 'faculty-admin') {
         can('manage', 'AcademicSetup');
+        can('manage', 'Hall');
         can('read', 'Dashboard');
         can('read', 'Report');
         can('read', 'User');
@@ -69,6 +70,7 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
 
     if (n === 'instructor') {
         can('read', 'AcademicSetup');
+        can('read', 'Hall');
         can('read', 'Dashboard');
         can('read', 'Report');
         return build();

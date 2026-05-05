@@ -1,0 +1,22 @@
+import { BaseApi } from './baseApi';
+import type { IHall } from '../../types/hall';
+
+class HallApi extends BaseApi<IHall> {
+    constructor() {
+        super('/halls', {
+            reducerPath: 'hallApi',
+            tagType: 'halls',
+        });
+    }
+}
+
+export const hallApi = new HallApi().createApi();
+
+export const {
+    useGetAllQuery: useGetAllHallsQuery,
+    useGetByIdQuery: useGetHallByIdQuery,
+    useCreateMutation: useCreateHallMutation,
+    useUpdateMutation: useUpdateHallMutation,
+    useDeleteMutation: useDeleteHallMutation,
+    useBulkDeleteMutation: useBulkDeleteHallsMutation,
+} = hallApi;

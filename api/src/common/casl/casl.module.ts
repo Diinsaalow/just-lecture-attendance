@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CaslAbilityFactory } from './casl-ability.factory';
 import { PoliciesGuard } from './guards/policies.guard';
 import { UserScopeService } from './user-scope.service';
+import { Hall, HallSchema } from '../../modules/hall/schemas/hall.schema';
 import { Campus, CampusSchema } from '../../modules/campus/schemas/campus.schema';
 import { Faculty, FacultySchema } from '../../modules/faculty/schemas/faculty.schema';
 import { Department, DepartmentSchema } from '../../modules/department/schemas/department.schema';
@@ -17,6 +18,7 @@ import { Semester, SemesterSchema } from '../../modules/semester/schemas/semeste
   imports: [
     MongooseModule.forFeature([
       { name: Campus.name, schema: CampusSchema },
+      { name: Hall.name, schema: HallSchema },
       { name: Faculty.name, schema: FacultySchema },
       { name: Department.name, schema: DepartmentSchema },
       { name: LectureClass.name, schema: LectureClassSchema },

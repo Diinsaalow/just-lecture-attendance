@@ -41,6 +41,11 @@ export const DeleteCampusPolicy = createPolicyHandler(
   Subject.Campus,
 );
 
+export const CreateHallPolicy = createPolicyHandler(Action.Create, Subject.Hall);
+export const ReadHallPolicy = createPolicyHandler(Action.Read, Subject.Hall);
+export const UpdateHallPolicy = createPolicyHandler(Action.Update, Subject.Hall);
+export const DeleteHallPolicy = createPolicyHandler(Action.Delete, Subject.Hall);
+
 export const CreateFacultyPolicy = createPolicyHandler(
   Action.Create,
   Subject.Faculty,

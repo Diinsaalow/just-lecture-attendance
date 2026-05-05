@@ -6,6 +6,7 @@ export const Subject = {
   AcademicSetup: 'AcademicSetup',
   AcademicYear: 'AcademicYear',
   Campus: 'Campus',
+  Hall: 'Hall',
   Faculty: 'Faculty',
   Department: 'Department',
   Semester: 'Semester',

@@ -18,6 +18,7 @@ import { CourseModule } from './modules/course/course.module';
 import { SemesterModule } from './modules/semester/semester.module';
 import { LectureClassModule } from './modules/classes/lecture-class.module';
 import { PeriodModule } from './modules/period/period.module';
+import { HallModule } from './modules/hall/hall.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PeriodModule } from './modules/period/period.module';
     SemesterModule,
     LectureClassModule,
     PeriodModule,
+    HallModule,
   ],
   controllers: [AppController],
   providers: [
