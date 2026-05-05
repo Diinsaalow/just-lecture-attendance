@@ -1,3 +1,4 @@
+import type { IUser } from './auth';
 import type { EntityStatus } from './entity-status';
 import type { IDepartment } from './department';
 
@@ -7,7 +8,7 @@ export interface ICourse {
     departmentId: string | Pick<IDepartment, '_id' | 'name'>;
     type: string;
     credit: number;
-    lecturers?: string[];
+    lecturers?: (string | Pick<IUser, '_id' | 'username' | 'email' | 'firstName' | 'lastName'>)[];
     status: EntityStatus;
     createdBy?: string;
     createdAt?: string;

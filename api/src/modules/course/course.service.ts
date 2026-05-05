@@ -80,7 +80,14 @@ export class CourseService {
 
   async findById(id: string, user: AuthUserPayload): Promise<Course> {
     await this.userScopeService.ensureCourseInScope(user, id);
-    const doc = await this.findByIdOrNull(id);
+    const doc = await this.courseModel
+      .findById(id)
+      .populate({ path: 'departmentId', select: 'name' })
+      .populate({
+        path: 'lecturers',
+        select: 'username email firstName lastName',
+      })
+      .exec();
     if (!doc) {
       throw new NotFoundException('Course not found');
     }

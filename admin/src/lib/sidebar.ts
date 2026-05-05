@@ -8,6 +8,7 @@ import {
     School,
     Layers,
     BookOpen,
+    Library,
     Clock,
 } from 'lucide-react';
 
@@ -59,6 +60,13 @@ export const sidebarMenu: MenuItem[] = [
         title: 'semester_menu',
         icon: BookOpen,
         path: '/semesters',
+        resource: 'AcademicSetup',
+        action: academicActions,
+    },
+    {
+        title: 'courses_menu',
+        icon: Library,
+        path: '/courses',
         resource: 'AcademicSetup',
         action: academicActions,
     },
@@ -138,7 +146,7 @@ export const cleanEmptySections = (menuItems: MenuItem[]): MenuItem[] => {
     return cleaned;
 };
 
-const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|faculties|departments|semesters|periods|classes)(\/.*)?$/;
+const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|faculties|departments|semesters|courses|periods|classes)(\/.*)?$/;
 
 /** Hide the content management section header if no academic pages remain after permission filtering. */
 export const pruneOrphanContentManagementSection = (menuItems: MenuItem[]): MenuItem[] => {

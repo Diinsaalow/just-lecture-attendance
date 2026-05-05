@@ -15,6 +15,7 @@ import Departments from '../pages/department';
 import Semesters from '../pages/semester';
 import Periods from '../pages/period';
 import Classes from '../pages/classes';
+import Courses from '../pages/course';
 
 import Settings from '../pages/settings';
 import SettingsRoles from '../pages/settings/roles';
@@ -128,6 +129,14 @@ export const protectedRoutes: RouteConfig[] = [
     {
         path: '/semesters',
         element: <Semesters />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AcademicSetup',
+        action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/courses',
+        element: <Courses />,
         layout: 'default',
         isPublic: false,
         resource: 'AcademicSetup',

@@ -260,6 +260,7 @@
     "faculty_menu": "Faculties",
     "department_menu": "Departments",
     "semester_menu": "Semesters",
+    "courses_menu": "Courses",
     "periods_menu": "Periods",
     "classes_menu": "Classes"
 }

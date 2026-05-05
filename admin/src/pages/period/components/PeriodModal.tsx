@@ -8,8 +8,6 @@ interface Props {
     setIsOpen: (v: boolean) => void;
     itemToEdit?: IPeriod | null;
 }
-
-/** Same right-slide panel pattern as Settings → Roles (GenericSidebar). */
 const PeriodModal: React.FC<Props> = ({ isOpen, setIsOpen, itemToEdit }) => (
     <GenericSidebar
         isOpen={isOpen}
