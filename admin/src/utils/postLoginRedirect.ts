@@ -1,6 +1,6 @@
 import type { IUser, IRole } from '../types/auth';
 
-const ADMIN_ROLE = 'admin';
+const SUPER_ADMIN_ROLE = 'super-admin';
 
 function normalizeRoleName(role: IUser['role'] | undefined): string {
     if (!role) return '';
@@ -16,7 +16,7 @@ export function getPostLoginPath(role: IUser['role'] | undefined, redirectPath: 
     const raw = redirectPath?.trim() || '/';
     const isSafeInternal = raw.startsWith('/') && !raw.startsWith('//') && !raw.includes(':');
 
-    if (r === ADMIN_ROLE) {
+    if (r === SUPER_ADMIN_ROLE) {
         if (raw !== '/' && isSafeInternal) {
             return raw;
         }
@@ -27,5 +27,5 @@ export function getPostLoginPath(role: IUser['role'] | undefined, redirectPath: 
 }
 
 export function isAdminRole(role: IUser['role'] | undefined): boolean {
-    return normalizeRoleName(role) === ADMIN_ROLE;
+    return normalizeRoleName(role) === SUPER_ADMIN_ROLE;
 }

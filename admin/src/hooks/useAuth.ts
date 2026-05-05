@@ -150,7 +150,7 @@ export const useAuth = () => {
         isAdmin: (() => {
             const r = auth.user?.role;
             const name = (typeof r === 'string' ? r : (r as { name?: string })?.name)?.toLowerCase();
-            return name === 'admin' || name === 'super-admin';
+            return name === 'super-admin';
         })(),
     };
 };

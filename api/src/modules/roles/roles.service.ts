@@ -50,8 +50,6 @@ export class RolesService implements OnModuleInit {
       UserRole.SUPER_ADMIN,
       UserRole.FACULTY_ADMIN,
       UserRole.INSTRUCTOR,
-      UserRole.ADMIN,
-      UserRole.LECTURE,
     ];
     for (const name of names) {
       const normalized = normalizeRoleName(name);

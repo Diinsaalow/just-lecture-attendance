@@ -122,7 +122,15 @@ const UserList = () => {
             accessor: 'role',
             title: 'Role',
             type: 'text',
-            render: ({ role }) => <div>{typeof role == 'object' ? (role as any).name : role}</div>,
+            render: ({ role }) => (
+                <div>
+                    {role != null && typeof role === 'object'
+                        ? (role as { name?: string }).name ?? '—'
+                        : role != null
+                          ? String(role)
+                          : '—'}
+                </div>
+            ),
         },
         {
             accessor: 'status',

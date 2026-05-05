@@ -7,20 +7,16 @@ export type Actions = 'create' | 'read' | 'update' | 'delete' | 'manage';
 export type AppAbility = PureAbility<[Actions, Subjects]>;
 
 function normalizeRole(name: string): string {
-    const n = name.toLowerCase();
-    if (n === 'admin') return 'super-admin';
-    if (n === 'lecture') return 'instructor';
-    return n;
+    return name.toLowerCase();
 }
 
 function isSuperAdminRole(user: IUser): boolean {
     if (typeof user.role === 'string') {
-        const n = normalizeRole(user.role);
-        return n === 'super-admin' || user.role.toLowerCase() === 'admin';
+        return normalizeRole(user.role) === 'super-admin';
     }
     const role = user.role as IRole | undefined;
     const nm = role?.name?.toLowerCase();
-    return nm === 'super-admin' || nm === 'admin';
+    return nm === 'super-admin';
 }
 
 /** Rules from API `/auth/login` → `user.abilities`, or role document when populated. */

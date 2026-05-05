@@ -9,19 +9,31 @@ import { Department } from '../../modules/department/schemas/department.schema';
 import { Course } from '../../modules/course/schemas/course.schema';
 import { User } from '../../modules/users/schemas/user.schema';
 import { Role } from '../../modules/roles/schemas/role.schema';
+import { UserRole } from '../../common/enums/user-role.enum';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 import { TimetablePeriodType } from '../../modules/period/enums/timetable-period-type.enum';
+
+const BCRYPT_ROUNDS = 10;
+const SEED_SUPER_ADMIN_USERNAME = 'admin';
+const SEED_SUPER_ADMIN_PASSCODE = 'Admin@123';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
-  
+
   const semesterModel = app.get<Model<Semester>>(getModelToken(Semester.name));
   const periodModel = app.get<Model<Period>>(getModelToken(Period.name));
-  const classModel = app.get<Model<LectureClass>>(getModelToken(LectureClass.name));
-  const academicYearModel = app.get<Model<AcademicYear>>(getModelToken(AcademicYear.name));
+  const classModel = app.get<Model<LectureClass>>(
+    getModelToken(LectureClass.name),
+  );
+  const academicYearModel = app.get<Model<AcademicYear>>(
+    getModelToken(AcademicYear.name),
+  );
   const campusModel = app.get<Model<Campus>>(getModelToken(Campus.name));
-  const departmentModel = app.get<Model<Department>>(getModelToken(Department.name));
+  const departmentModel = app.get<Model<Department>>(
+    getModelToken(Department.name),
+  );
   const courseModel = app.get<Model<Course>>(getModelToken(Course.name));
   const userModel = app.get<Model<User>>(getModelToken(User.name));
   const roleModel = app.get<Model<Role>>(getModelToken(Role.name));
@@ -35,25 +47,54 @@ async function bootstrap() {
   console.log('Cleared existing Semester, Period, and Class data');
 
   // 1. Get or Create a Role
-  let role = await roleModel.findOne();
+  let role = await roleModel.findOne({ name: UserRole.SUPER_ADMIN });
   if (!role) {
-    role = await roleModel.create({ name: 'admin' });
-    console.log('Created default admin role');
+    role = await roleModel.create({ name: UserRole.SUPER_ADMIN });
+    console.log('Created default super-admin role');
   }
 
-  // 2. Get or Create a User (Admin/Lecturer)
-  let user = await userModel.findOne();
+  // 2. Super-admin user (username / passcode for local dev — matches API login)
+  const passcodeHash = await bcrypt.hash(
+    SEED_SUPER_ADMIN_PASSCODE,
+    BCRYPT_ROUNDS,
+  );
+  let user = await userModel.findOne({ username: SEED_SUPER_ADMIN_USERNAME });
   if (!user) {
     user = await userModel.create({
-      username: 'admin',
-      passcodeHash: 'seed_passcode_hash', 
+      username: SEED_SUPER_ADMIN_USERNAME,
+      email: SEED_SUPER_ADMIN_USERNAME,
+      passcodeHash,
       role: role._id,
+      status: 'active',
       isActive: true,
     });
-    console.log('Created default admin user');
+    console.log(
+      `Created super-admin user "${SEED_SUPER_ADMIN_USERNAME}" (passcode: set in sample-data.seed.ts)`,
+    );
+  } else {
+    await userModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          passcodeHash,
+          role: role._id,
+          email: SEED_SUPER_ADMIN_USERNAME,
+          status: 'active',
+          isActive: true,
+        },
+      },
+    );
+    user = await userModel.findById(user._id);
+    console.log(
+      `Updated super-admin user "${SEED_SUPER_ADMIN_USERNAME}" (passcode reset from seed)`,
+    );
   }
 
-  const userId = (user as any)._id;
+  if (!user) {
+    throw new Error('Sample seed: failed to resolve super-admin user');
+  }
+
+  const userId = (user as { _id: Types.ObjectId })._id;
 
   // 3. Get or Create Academic Year
   let academicYear = await academicYearModel.findOne();
@@ -85,7 +126,7 @@ async function bootstrap() {
     department = await departmentModel.create({
       name: 'Computer Science',
       graduationName: 'Bachelor of Computer Science',
-      facultyId: new Types.ObjectId(), 
+      facultyId: new Types.ObjectId(),
       duration: '4 Years',
       abbreviation: 'CS',
       degree: 'BSc',

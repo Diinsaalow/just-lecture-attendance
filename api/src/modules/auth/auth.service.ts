@@ -43,7 +43,7 @@ export class AuthService {
   ): Promise<{ accessToken: string; user: AuthPublicUser }> {
     const role = dto.role ?? UserRole.INSTRUCTOR;
 
-    const privilegedRoles = [UserRole.ADMIN, UserRole.SUPER_ADMIN];
+    const privilegedRoles = [UserRole.SUPER_ADMIN];
     if (privilegedRoles.includes(role)) {
       if (process.env.ALLOW_ADMIN_REGISTER !== 'true') {
         throw new ForbiddenException('Admin self-registration is disabled');

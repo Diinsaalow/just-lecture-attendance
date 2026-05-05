@@ -2,17 +2,14 @@ import { Action } from './constants/action.enum';
 import { Subject } from './constants/subjects';
 import type { AbilityRule } from './types/ability.types';
 
-/** Normalized role keys after legacy alias mapping (see `normalizeRoleName`). */
+/** Known built-in role keys (names stored lowercase in DB). */
 export type NormalizedRole =
   | 'super-admin'
   | 'faculty-admin'
   | 'instructor';
 
 export function normalizeRoleName(name: string): NormalizedRole | string {
-  const n = name.trim().toLowerCase();
-  if (n === 'admin') return 'super-admin';
-  if (n === 'lecture') return 'instructor';
-  return n;
+  return name.trim().toLowerCase();
 }
 
 export function defaultAbilitiesForRole(
