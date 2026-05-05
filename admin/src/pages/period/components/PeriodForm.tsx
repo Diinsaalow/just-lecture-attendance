@@ -4,17 +4,63 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import ActionButton from '../../../components/ActionButton';
-import FormInput from '../../../components/form/FormInput';
 import FormSelect from '../../../components/form/FormSelect';
+import FormTimePicker from '../../../components/form/FormTimePicker';
 import { ENTITY_STATUS_OPTIONS, PERIOD_TYPE_OPTIONS } from '../../../constants/entityStatus';
 import { useCreatePeriodMutation, useUpdatePeriodMutation } from '../../../store/api/periodApi';
 import { useGetAllLectureClassesQuery } from '../../../store/api/lectureClassApi';
 import { useGetAllCoursesQuery } from '../../../store/api/courseApi';
 import { useGetAllSemestersQuery } from '../../../store/api/semesterApi';
-import { useGetAllUsersQuery } from '../../../store/api/userApi';
+import { useGetAllDepartmentsQuery } from '../../../store/api/departmentApi';
+import { useGetAllLecturersQuery } from '../../../store/api/lecturerApi';
+import type { IUser } from '../../../types/auth';
+import type { ICourse } from '../../../types/course';
+import type { ILectureClass } from '../../../types/lectureClass';
 import type { IPeriod } from '../../../types/period';
+import { formatJamhuriyaUsername } from '../../../utils/jamhuriyaUsername';
+
+const WEEKDAY_OPTIONS = (
+    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
+).map((d) => ({ value: d, label: d }));
+
+function lecturerSelectLabel(u: IUser): string {
+    const full = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
+    const uname = u.username ? formatJamhuriyaUsername(u.username) : '';
+    if (full && uname) return `${full} (${uname})`;
+    if (full) return full;
+    if (uname) return `(${uname})`;
+    return u.email || u._id;
+}
+
+function normalizeWeekday(day: string): string {
+    const t = day.trim();
+    const match = WEEKDAY_OPTIONS.find((o) => o.value.toLowerCase() === t.toLowerCase());
+    return match?.value ?? t;
+}
+
+/** Ensures Flatpickr gets stable `HH:mm` (pads single-digit hours). */
+function normalizeTimeHHmm(t: string): string {
+    const s = t.trim();
+    const m = s.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return s;
+    const h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    if (isNaN(h) || isNaN(min)) return s;
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
+function departmentIdOfClass(c: ILectureClass): string {
+    const d = c.departmentId;
+    return typeof d === 'string' ? d : d._id;
+}
+
+function departmentIdOfCourse(c: ICourse): string {
+    const d = c.departmentId;
+    return typeof d === 'string' ? d : d._id;
+}
 
 const schema = z.object({
+    departmentId: z.string().min(1, 'Department is required'),
     classId: z.string().min(1, 'Class is required'),
     courseId: z.string().min(1, 'Course is required'),
     lecturerId: z.string().min(1, 'Lecturer is required'),
@@ -38,24 +84,27 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const { data: lcRes } = useGetAllLectureClassesQuery({ query: {}, options: { limit: 500, page: 1 } });
     const { data: coRes } = useGetAllCoursesQuery({ query: {}, options: { limit: 500, page: 1 } });
     const { data: seRes } = useGetAllSemestersQuery({ query: {}, options: { limit: 200, page: 1 } });
-    const { data: usRes } = useGetAllUsersQuery({ query: {}, options: { limit: 500, page: 1 } });
+    const { data: depRes } = useGetAllDepartmentsQuery({ query: {}, options: { limit: 200, page: 1 } });
+    const { data: lecRes } = useGetAllLecturersQuery({ query: {}, options: { limit: 500, page: 1 } });
 
-    const classOpts = useMemo(() => (lcRes?.docs ?? []).map((c) => ({ value: c._id, label: c.name })), [lcRes]);
-    const courseOpts = useMemo(() => (coRes?.docs ?? []).map((c) => ({ value: c._id, label: c.name })), [coRes]);
+    const deptOpts = useMemo(() => (depRes?.docs ?? []).map((d) => ({ value: d._id, label: d.name })), [depRes]);
     const semOpts = useMemo(() => (seRes?.docs ?? []).map((s) => ({ value: s._id, label: s.name })), [seRes]);
-    const userOpts = useMemo(
-        () => (usRes?.docs ?? []).map((u) => ({ value: u._id, label: u.username || u.email || u._id })),
-        [usRes],
+    const lecturerOpts = useMemo(
+        () => (lecRes?.docs ?? []).map((u) => ({ value: u._id, label: lecturerSelectLabel(u) })),
+        [lecRes],
     );
 
     const {
         control,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
+            departmentId: '',
             classId: '',
             courseId: '',
             lecturerId: '',
@@ -68,32 +117,68 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         },
     });
 
+    const departmentId = watch('departmentId');
+
+    const classOpts = useMemo(() => {
+        if (!departmentId) return [];
+        return (lcRes?.docs ?? [])
+            .filter((c) => departmentIdOfClass(c) === departmentId)
+            .map((c) => ({ value: c._id, label: c.name }));
+    }, [lcRes, departmentId]);
+
+    const courseOpts = useMemo(() => {
+        if (!departmentId) return [];
+        return (coRes?.docs ?? [])
+            .filter((c) => departmentIdOfCourse(c) === departmentId)
+            .map((c) => ({ value: c._id, label: c.name }));
+    }, [coRes, departmentId]);
+
     const [createItem] = useCreatePeriodMutation();
     const [updateItem] = useUpdatePeriodMutation();
 
     useEffect(() => {
         if (itemToEdit) {
+            const classId = typeof itemToEdit.classId === 'string' ? itemToEdit.classId : itemToEdit.classId._id;
+            const courseIdVal = typeof itemToEdit.courseId === 'string' ? itemToEdit.courseId : itemToEdit.courseId._id;
+            const cls = lcRes?.docs?.find((c) => c._id === classId);
+            const crs = coRes?.docs?.find((c) => c._id === courseIdVal);
+            const resolvedDept = cls ? departmentIdOfClass(cls) : crs ? departmentIdOfCourse(crs) : '';
             reset({
-                classId: typeof itemToEdit.classId === 'string' ? itemToEdit.classId : itemToEdit.classId._id,
-                courseId: typeof itemToEdit.courseId === 'string' ? itemToEdit.courseId : itemToEdit.courseId._id,
+                departmentId: resolvedDept,
+                classId,
+                courseId: courseIdVal,
                 lecturerId: typeof itemToEdit.lecturerId === 'string' ? itemToEdit.lecturerId : itemToEdit.lecturerId._id,
                 semesterId: typeof itemToEdit.semesterId === 'string' ? itemToEdit.semesterId : itemToEdit.semesterId._id,
-                day: itemToEdit.day,
+                day: normalizeWeekday(itemToEdit.day),
                 type: itemToEdit.type,
-                from: itemToEdit.from,
-                to: itemToEdit.to,
+                from: normalizeTimeHHmm(itemToEdit.from),
+                to: normalizeTimeHHmm(itemToEdit.to),
                 status: itemToEdit.status,
             });
+        } else {
+            reset({
+                departmentId: '',
+                classId: '',
+                courseId: '',
+                lecturerId: '',
+                semesterId: '',
+                day: '',
+                type: 'Theory',
+                from: '',
+                to: '',
+                status: 'ACTIVE',
+            });
         }
-    }, [itemToEdit, reset]);
+    }, [itemToEdit, lcRes?.docs, coRes?.docs, reset]);
 
     const onSubmit = async (data: FormData) => {
+        const { departmentId: _d, ...payload } = data;
         try {
             if (isEdit && itemToEdit) {
-                await updateItem({ id: itemToEdit._id, data }).unwrap();
+                await updateItem({ id: itemToEdit._id, data: payload }).unwrap();
                 toast.success('Period updated');
             } else {
-                await createItem(data).unwrap();
+                await createItem(payload).unwrap();
                 toast.success('Period created');
             }
             onClose();
@@ -103,27 +188,76 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         }
     };
 
+    const deptLocked = isSubmitting;
+
     return (
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <Controller
+                name="departmentId"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="p-dept"
+                        label="Department"
+                        value={value || ''}
+                        onChange={(v) => {
+                            onChange(v);
+                            setValue('classId', '');
+                            setValue('courseId', '');
+                        }}
+                        onBlur={onBlur}
+                        options={deptOpts}
+                        error={errors.departmentId?.message}
+                        disabled={deptLocked}
+                    />
+                )}
+            />
             <Controller
                 name="classId"
                 control={control}
                 render={({ field: { value, onChange, onBlur } }) => (
-                    <FormSelect id="p-class" label="Class" value={value} onChange={onChange} onBlur={onBlur} options={classOpts} error={errors.classId?.message} disabled={isSubmitting} />
+                    <FormSelect
+                        id="p-class"
+                        label="Class"
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={classOpts}
+                        error={errors.classId?.message}
+                        disabled={deptLocked || !departmentId}
+                    />
                 )}
             />
             <Controller
                 name="courseId"
                 control={control}
                 render={({ field: { value, onChange, onBlur } }) => (
-                    <FormSelect id="p-course" label="Course" value={value} onChange={onChange} onBlur={onBlur} options={courseOpts} error={errors.courseId?.message} disabled={isSubmitting} />
+                    <FormSelect
+                        id="p-course"
+                        label="Course"
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={courseOpts}
+                        error={errors.courseId?.message}
+                        disabled={deptLocked || !departmentId}
+                    />
                 )}
             />
             <Controller
                 name="lecturerId"
                 control={control}
                 render={({ field: { value, onChange, onBlur } }) => (
-                    <FormSelect id="p-lec" label="Lecturer" value={value} onChange={onChange} onBlur={onBlur} options={userOpts} error={errors.lecturerId?.message} disabled={isSubmitting} />
+                    <FormSelect
+                        id="p-lec"
+                        label="Lecturer"
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={lecturerOpts}
+                        error={errors.lecturerId?.message}
+                        disabled={isSubmitting}
+                    />
                 )}
             />
             <Controller
@@ -133,7 +267,22 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect id="p-sem" label="Semester" value={value} onChange={onChange} onBlur={onBlur} options={semOpts} error={errors.semesterId?.message} disabled={isSubmitting} />
                 )}
             />
-            <Controller name="day" control={control} render={({ field }) => <FormInput id="p-day" label="Day" error={errors.day?.message} disabled={isSubmitting} {...field} placeholder="e.g. Monday" />} />
+            <Controller
+                name="day"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="p-day"
+                        label="Day"
+                        value={value || ''}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={WEEKDAY_OPTIONS}
+                        error={errors.day?.message}
+                        disabled={isSubmitting}
+                    />
+                )}
+            />
             <Controller
                 name="type"
                 control={control}
@@ -141,8 +290,38 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect id="p-type" label="Type" value={value} onChange={onChange} onBlur={onBlur} options={PERIOD_TYPE_OPTIONS} disabled={isSubmitting} error={errors.type?.message} />
                 )}
             />
-            <Controller name="from" control={control} render={({ field }) => <FormInput id="p-from" label="From" error={errors.from?.message} disabled={isSubmitting} {...field} placeholder="08:00" />} />
-            <Controller name="to" control={control} render={({ field }) => <FormInput id="p-to" label="To" error={errors.to?.message} disabled={isSubmitting} {...field} placeholder="09:30" />} />
+            <Controller
+                name="from"
+                control={control}
+                render={({ field }) => (
+                    <FormTimePicker
+                        id="p-from"
+                        label="From"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={errors.from?.message}
+                        disabled={isSubmitting}
+                        placeholder="Select start time"
+                    />
+                )}
+            />
+            <Controller
+                name="to"
+                control={control}
+                render={({ field }) => (
+                    <FormTimePicker
+                        id="p-to"
+                        label="To"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={errors.to?.message}
+                        disabled={isSubmitting}
+                        placeholder="Select end time"
+                    />
+                )}
+            />
             <Controller
                 name="status"
                 control={control}

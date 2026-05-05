@@ -28,7 +28,7 @@ import { paymentApi } from './api/paymentApi';
 import { paymentMethodApi } from './api/paymentMethodApi';
 import { smsProviderApi } from './api/smsProviderApi';
 import { studentApi } from './api/studentApi';
-import { instructorApi } from './api/instructorApi';
+import { lecturerApi } from './api/lecturerApi';
 import { mobileApi } from './api/mobileApi';
 import { quizApi } from './api/quizApi';
 import { reviewApi } from './api/reviewApi';
@@ -70,7 +70,7 @@ const rootReducer = combineReducers({
     [paymentMethodApi.reducerPath]: paymentMethodApi.reducer,
     [smsProviderApi.reducerPath]: smsProviderApi.reducer,
     [studentApi.reducerPath]: studentApi.reducer,
-    [instructorApi.reducerPath]: instructorApi.reducer,
+    [lecturerApi.reducerPath]: lecturerApi.reducer,
     [mobileApi.reducerPath]: mobileApi.reducer,
     [quizApi.reducerPath]: quizApi.reducer,
     [reviewApi.reducerPath]: reviewApi.reducer,
@@ -126,7 +126,7 @@ export const store = configureStore({
             paymentMethodApi.middleware,
             smsProviderApi.middleware,
             studentApi.middleware,
-            instructorApi.middleware,
+            lecturerApi.middleware,
             mobileApi.middleware,
             quizApi.middleware,
             reviewApi.middleware,

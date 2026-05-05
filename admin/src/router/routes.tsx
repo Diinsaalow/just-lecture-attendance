@@ -7,7 +7,9 @@ import LockScreen from '../pages/login/LockScreen';
 
 import Unauthorized from '../components/errors/Unauthorized';
 
-import Users from '../pages/user';
+import UsersModuleLayout from '../pages/user/UsersModuleLayout';
+import UsersPage from '../pages/user/UsersPage';
+import LecturersPage from '../pages/user/lecturers';
 import AcademicYears from '../pages/academic-year';
 import Campuses from '../pages/campus';
 import Faculties from '../pages/faculty';
@@ -23,7 +25,8 @@ import SettingsRoles from '../pages/settings/roles';
 import SystemDashboard from '../pages/dashboard/SystemDashboard';
 
 export type RouteConfig = {
-    path: string;
+    path?: string;
+    index?: boolean;
     element: React.ReactNode;
     layout: 'default' | 'blank';
     errorElement?: React.ReactNode;
@@ -87,11 +90,29 @@ export const protectedRoutes: RouteConfig[] = [
 
     {
         path: '/users',
-        element: <Users />,
+        element: <UsersModuleLayout />,
         layout: 'default',
         isPublic: false,
         resource: 'User',
         action: ['read', 'create', 'update', 'delete'],
+        children: [
+            {
+                index: true,
+                element: <UsersPage />,
+                layout: 'default',
+                isPublic: false,
+                resource: 'User',
+                action: ['read', 'create', 'update', 'delete'],
+            },
+            {
+                path: 'lecturers',
+                element: <LecturersPage />,
+                layout: 'default',
+                isPublic: false,
+                resource: 'User',
+                action: ['read', 'create', 'update', 'delete'],
+            },
+        ],
     },
 
     {

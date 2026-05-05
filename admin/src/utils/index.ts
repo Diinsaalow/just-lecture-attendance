@@ -23,7 +23,11 @@ export const formatQueryParams = (options: any) => {
     if (!options) return {};
 
     const params: Record<string, any> = {};
-    
+
+    if (options?.variant !== undefined && options.variant !== '') {
+        params['variant'] = options.variant;
+    }
+
     // Handle pagination toggle
     if (options.pagination !== undefined) {
         params['pagination'] = options.pagination;

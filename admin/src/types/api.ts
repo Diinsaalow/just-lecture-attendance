@@ -18,6 +18,8 @@ export interface IPopulate {
 }
 
 export interface IQueryParams {
+    /** Passed as top-level query param to the API (e.g. `variant=staff` on GET /users). */
+    variant?: 'staff';
     pagination?: boolean;
     query?: Record<string, string | number | boolean | string[]> | object;
     search?: { keyword: string; fields: string[] };

@@ -87,9 +87,22 @@ export const sidebarMenu: MenuItem[] = [
     {
         title: 'users',
         icon: Users,
-        path: '/users',
         resource: 'User',
         action: ['read', 'create', 'update', 'delete'],
+        children: [
+            {
+                title: 'users',
+                path: '/users',
+                resource: 'User',
+                action: ['read', 'create', 'update', 'delete'],
+            },
+            {
+                title: 'lecturers_menu',
+                path: '/users/lecturers',
+                resource: 'User',
+                action: ['read', 'create', 'update', 'delete'],
+            },
+        ],
     },
     {
         title: 'settings',
