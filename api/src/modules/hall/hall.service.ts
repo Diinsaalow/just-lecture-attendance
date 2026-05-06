@@ -93,6 +93,17 @@ export class HallService {
       .exec();
   }
 
+  async findLeanCampusId(id: string): Promise<Types.ObjectId | null> {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    const row = await this.hallModel
+      .findById(id)
+      .select('campusId')
+      .lean<{ campusId: Types.ObjectId } | null>();
+    return row?.campusId ?? null;
+  }
+
   async ensureExists(id: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid hall id');

@@ -12,6 +12,10 @@ import { Period, PeriodDocument } from '../../modules/period/schemas/period.sche
 import { Course, CourseDocument } from '../../modules/course/schemas/course.schema';
 import { Semester, SemesterDocument } from '../../modules/semester/schemas/semester.schema';
 import { User, UserDocument } from '../../modules/users/schemas/user.schema';
+import {
+  ClassSession,
+  ClassSessionDocument,
+} from '../../modules/class-session/schemas/class-session.schema';
 
 const emptyMatch = { _id: { $exists: false } };
 
@@ -34,6 +38,8 @@ export class UserScopeService {
     private readonly semesterModel: Model<SemesterDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectModel(ClassSession.name)
+    private readonly classSessionModel: Model<ClassSessionDocument>,
   ) {}
 
   isSuperAdmin(user: AuthUserPayload): boolean {
@@ -196,6 +202,13 @@ export class UserScopeService {
     return emptyMatch;
   }
 
+  /** Same visibility as periods: faculty by class in faculty; instructor by lecturer. */
+  async classSessionMatch(
+    user: AuthUserPayload,
+  ): Promise<Record<string, unknown>> {
+    return this.periodMatch(user);
+  }
+
   async academicYearMatch(_user: AuthUserPayload): Promise<Record<string, unknown>> {
     return {};
   }
@@ -270,6 +283,15 @@ export class UserScopeService {
   ): Promise<void> {
     await this.ensureRow(this.periodModel, periodId, () =>
       this.periodMatch(user),
+    );
+  }
+
+  async ensureClassSessionInScope(
+    user: AuthUserPayload,
+    classSessionId: string,
+  ): Promise<void> {
+    await this.ensureRow(this.classSessionModel, classSessionId, () =>
+      this.classSessionMatch(user),
     );
   }
 

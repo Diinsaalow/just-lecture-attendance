@@ -1,10 +1,12 @@
 import {
+  Allow,
   IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
 import { TimetablePeriodType } from '../enums/timetable-period-type.enum';
@@ -39,6 +41,12 @@ export class CreatePeriodDto {
   @IsNotEmpty()
   @MaxLength(20)
   to: string;
+
+  @Allow()
+  @IsOptional()
+  @ValidateIf((_, v) => v != null)
+  @IsMongoId()
+  hallId?: string | null;
 
   @IsOptional()
   @IsEnum(EntityStatus)

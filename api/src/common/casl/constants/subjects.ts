@@ -11,6 +11,7 @@ export const Subject = {
   Department: 'Department',
   Semester: 'Semester',
   Period: 'Period',
+  ClassSession: 'ClassSession',
   LectureClass: 'LectureClass',
   Course: 'Course',
   User: 'User',

@@ -42,6 +42,7 @@ const FACULTY_ADMIN_RULES: AbilityRule[] = [
   { action: Action.Manage, subject: Subject.LectureClass },
   { action: Action.Manage, subject: Subject.Course },
   { action: Action.Manage, subject: Subject.Period },
+  { action: Action.Manage, subject: Subject.ClassSession },
   { action: Action.Read, subject: Subject.User },
   { action: Action.Create, subject: Subject.User },
   { action: Action.Update, subject: Subject.User },
@@ -63,4 +64,6 @@ const INSTRUCTOR_RULES: AbilityRule[] = [
   { action: Action.Read, subject: Subject.Course },
   { action: Action.Read, subject: Subject.Period },
   { action: Action.Update, subject: Subject.Period },
+  { action: Action.Read, subject: Subject.ClassSession },
+  { action: Action.Update, subject: Subject.ClassSession },
 ];

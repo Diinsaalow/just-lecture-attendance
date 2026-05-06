@@ -14,6 +14,7 @@ import { CourseService } from '../course/course.service';
 import { LectureClassService } from '../classes/lecture-class.service';
 import { SemesterService } from '../semester/semester.service';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { HallService } from '../hall/hall.service';
 import { Period, PeriodDocument } from './schemas/period.schema';
 import { CreatePeriodDto } from './dto/create-period.dto';
 import { UpdatePeriodDto } from './dto/update-period.dto';
@@ -27,6 +28,7 @@ export class PeriodService {
     private readonly courseService: CourseService,
     private readonly semesterService: SemesterService,
     private readonly userScopeService: UserScopeService,
+    private readonly hallService: HallService,
   ) {}
 
   async create(
@@ -44,6 +46,7 @@ export class PeriodService {
     await this.ensureActiveUser(dto.lecturerId);
 
     await this.assertMatchingDepartment(dto.classId, dto.courseId);
+    await this.validateOptionalHall(user, dto.classId, dto.hallId);
 
     return this.periodModel.create({
       classId: new Types.ObjectId(dto.classId),
@@ -54,6 +57,9 @@ export class PeriodService {
       type: dto.type,
       from: dto.from,
       to: dto.to,
+      ...(dto.hallId
+        ? { hallId: new Types.ObjectId(dto.hallId) }
+        : {}),
       status: dto.status,
       createdBy: new Types.ObjectId(createdByUserId),
     });
@@ -72,6 +78,7 @@ export class PeriodService {
         { path: 'courseId', select: 'name' },
         { path: 'lecturerId', select: 'username' },
         { path: 'semesterId', select: 'name' },
+        { path: 'hallId', select: 'name code' },
       ],
       baseMatch:
         Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
@@ -99,7 +106,19 @@ export class PeriodService {
 
   async findById(id: string, user: AuthUserPayload): Promise<Period> {
     await this.userScopeService.ensurePeriodInScope(user, id);
-    const doc = await this.findByIdOrNull(id);
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Period not found');
+    }
+    const doc = await this.periodModel
+      .findById(id)
+      .populate([
+        { path: 'classId', select: 'name' },
+        { path: 'courseId', select: 'name' },
+        { path: 'lecturerId', select: 'username' },
+        { path: 'semesterId', select: 'name' },
+        { path: 'hallId', select: 'name code' },
+      ])
+      .exec();
     if (!doc) {
       throw new NotFoundException('Period not found');
     }
@@ -147,6 +166,10 @@ export class PeriodService {
       await this.assertMatchingDepartment(classId, courseId);
     }
 
+    if (dto.hallId !== undefined && dto.hallId) {
+      await this.validateOptionalHall(user, classId, dto.hallId);
+    }
+
     const patch: Record<string, unknown> = { ...dto };
     if (dto.classId) {
       patch.classId = new Types.ObjectId(dto.classId);
@@ -159,6 +182,11 @@ export class PeriodService {
     }
     if (dto.semesterId) {
       patch.semesterId = new Types.ObjectId(dto.semesterId);
+    }
+    if (dto.hallId !== undefined) {
+      patch.hallId = dto.hallId
+        ? new Types.ObjectId(dto.hallId)
+        : null;
     }
 
     const doc = await this.periodModel
@@ -201,6 +229,32 @@ export class PeriodService {
     if (String(lectureClass.departmentId) !== String(course.departmentId)) {
       throw new BadRequestException(
         'Course and class must belong to the same department',
+      );
+    }
+  }
+
+  private async validateOptionalHall(
+    user: AuthUserPayload,
+    classId: string,
+    hallId?: string | null,
+  ): Promise<void> {
+    if (!hallId) {
+      return;
+    }
+    await this.userScopeService.ensureHallInScope(user, hallId);
+    await this.hallService.ensureExists(hallId);
+    const lectureClass =
+      await this.lectureClassService.findByIdOrNull(classId);
+    if (!lectureClass) {
+      throw new BadRequestException('Class not found');
+    }
+    const hallCampusId = await this.hallService.findLeanCampusId(hallId);
+    if (
+      !hallCampusId ||
+      String(hallCampusId) !== String(lectureClass.campusId)
+    ) {
+      throw new BadRequestException(
+        'Hall must belong to the same campus as the class',
       );
     }
   }

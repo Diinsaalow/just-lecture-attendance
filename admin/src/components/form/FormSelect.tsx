@@ -80,11 +80,11 @@ const FormSelect: React.FC<FormSelectProps> = ({ label, options, error, classNam
                 {isOpen && !disabled && (
                     <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
                         <div className="max-h-60 overflow-y-auto py-1">
-                            {options.map((option) => {
+                            {options.map((option, idx) => {
                                 const isSelected = option.value === value;
                                 return (
                                     <button
-                                        key={option.value}
+                                        key={`${idx}-${option.label}-${option.value || 'empty'}`}
                                         type="button"
                                         onClick={() => handleSelect(option.value)}
                                         className={`

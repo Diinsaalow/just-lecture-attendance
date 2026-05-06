@@ -4,6 +4,7 @@ import {
     Settings,
     GraduationCap,
     CalendarDays,
+    CalendarRange,
     Building2,
     School,
     Layers,
@@ -84,6 +85,13 @@ export const sidebarMenu: MenuItem[] = [
         path: '/periods',
         resource: 'AcademicSetup',
         action: academicActions,
+    },
+    {
+        title: 'class_sessions_menu',
+        icon: CalendarRange,
+        path: '/class-sessions',
+        resource: 'ClassSession',
+        action: ['read', 'create', 'update'],
     },
     {
         title: 'classes_menu',
@@ -167,7 +175,8 @@ export const cleanEmptySections = (menuItems: MenuItem[]): MenuItem[] => {
     return cleaned;
 };
 
-const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|halls|faculties|departments|semesters|courses|periods|classes)(\/.*)?$/;
+const ACADEMIC_PATH_RE =
+    /^\/(academic-years|campuses|halls|faculties|departments|semesters|courses|periods|class-sessions|classes)(\/.*)?$/;
 
 /** Hide the content management section header if no academic pages remain after permission filtering. */
 export const pruneOrphanContentManagementSection = (menuItems: MenuItem[]): MenuItem[] => {

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
+import { Hall } from '../../hall/schemas/hall.schema';
 import { Course } from '../../course/schemas/course.schema';
 import { LectureClass } from '../../classes/schemas/lecture-class.schema';
 import { Semester } from '../../semester/schemas/semester.schema';
@@ -38,6 +39,9 @@ export class Period {
 
   @Prop({ required: true, trim: true })
   to: string;
+
+  @Prop({ type: Types.ObjectId, ref: Hall.name })
+  hallId?: Types.ObjectId;
 
   @Prop({
     type: String,

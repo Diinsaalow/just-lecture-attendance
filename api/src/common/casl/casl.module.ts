@@ -12,6 +12,10 @@ import { Period, PeriodSchema } from '../../modules/period/schemas/period.schema
 import { Course, CourseSchema } from '../../modules/course/schemas/course.schema';
 import { User, UserSchema } from '../../modules/users/schemas/user.schema';
 import { Semester, SemesterSchema } from '../../modules/semester/schemas/semester.schema';
+import {
+  ClassSession,
+  ClassSessionSchema,
+} from '../../modules/class-session/schemas/class-session.schema';
 
 @Global()
 @Module({
@@ -26,6 +30,7 @@ import { Semester, SemesterSchema } from '../../modules/semester/schemas/semeste
       { name: Semester.name, schema: SemesterSchema },
       { name: Course.name, schema: CourseSchema },
       { name: User.name, schema: UserSchema },
+      { name: ClassSession.name, schema: ClassSessionSchema },
     ]),
   ],
   providers: [CaslAbilityFactory, PoliciesGuard, UserScopeService],

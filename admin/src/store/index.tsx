@@ -17,6 +17,7 @@ import { semesterApi } from './api/semesterApi';
 import { periodApi } from './api/periodApi';
 import { courseApi } from './api/courseApi';
 import { hallApi } from './api/hallApi';
+import { classSessionApi } from './api/classSessionApi';
 import { subjectApi } from './api/subjectApi';
 import { chapterApi } from './api/chapterApi';
 import { lessonApi } from './api/lessonApi';
@@ -60,6 +61,7 @@ const rootReducer = combineReducers({
     [periodApi.reducerPath]: periodApi.reducer,
     [courseApi.reducerPath]: courseApi.reducer,
     [hallApi.reducerPath]: hallApi.reducer,
+    [classSessionApi.reducerPath]: classSessionApi.reducer,
     [subjectApi.reducerPath]: subjectApi.reducer,
     [chapterApi.reducerPath]: chapterApi.reducer,
     [lessonApi.reducerPath]: lessonApi.reducer,
@@ -117,6 +119,7 @@ export const store = configureStore({
             periodApi.middleware,
             courseApi.middleware,
             hallApi.middleware,
+            classSessionApi.middleware,
             subjectApi.middleware,
             chapterApi.middleware,
             lessonApi.middleware,

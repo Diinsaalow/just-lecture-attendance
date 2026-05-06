@@ -18,6 +18,15 @@ function cell(ref: unknown, key: string): string {
     return '-';
 }
 
+function hallLabel(hall: unknown): string {
+    if (!hall || typeof hall !== 'object') return '-';
+    const o = hall as Record<string, string>;
+    const name = o.name ?? '';
+    const code = o.code ?? '';
+    if (name && code) return `${name} (${code})`;
+    return name || code || '-';
+}
+
 const PeriodList = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<IPeriod | null>(null);
@@ -61,6 +70,7 @@ const PeriodList = () => {
         { accessor: 'courseId', title: 'Course', type: 'text', sortable: false, render: (r) => <span>{cell(r.courseId, 'name')}</span> },
         { accessor: 'lecturerId', title: 'Lecturer', type: 'text', sortable: false, render: (r) => <span>{cell(r.lecturerId, 'username')}</span> },
         { accessor: 'semesterId', title: 'Semester', type: 'text', sortable: false, render: (r) => <span>{cell(r.semesterId, 'name')}</span> },
+        { accessor: 'hallId', title: 'Hall', type: 'text', sortable: false, render: (r) => <span>{hallLabel(r.hallId)}</span> },
         { accessor: 'day', title: 'Day', type: 'text', sortable: true },
         { accessor: 'type', title: 'Type', type: 'text', sortable: true },
         { accessor: 'from', title: 'From', type: 'text', sortable: true },

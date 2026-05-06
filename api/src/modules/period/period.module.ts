@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { HallModule } from '../hall/hall.module';
 import { LectureClassModule } from '../classes/lecture-class.module';
 import { CourseModule } from '../course/course.module';
 import { SemesterModule } from '../semester/semester.module';
@@ -10,6 +11,7 @@ import { PeriodService } from './period.service';
 
 @Module({
   imports: [
+    HallModule,
     LectureClassModule,
     CourseModule,
     SemesterModule,

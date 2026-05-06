@@ -13,8 +13,10 @@ import { useGetAllCoursesQuery } from '../../../store/api/courseApi';
 import { useGetAllSemestersQuery } from '../../../store/api/semesterApi';
 import { useGetAllDepartmentsQuery } from '../../../store/api/departmentApi';
 import { useGetAllLecturersQuery } from '../../../store/api/lecturerApi';
+import { useGetAllHallsQuery } from '../../../store/api/hallApi';
 import type { IUser } from '../../../types/auth';
 import type { ICourse } from '../../../types/course';
+import type { IHall } from '../../../types/hall';
 import type { ILectureClass } from '../../../types/lectureClass';
 import type { IPeriod } from '../../../types/period';
 import { formatJamhuriyaUsername } from '../../../utils/jamhuriyaUsername';
@@ -59,6 +61,21 @@ function departmentIdOfCourse(c: ICourse): string {
     return typeof d === 'string' ? d : d._id;
 }
 
+function campusIdOfClass(c: ILectureClass): string {
+    const x = c.campusId;
+    return typeof x === 'string' ? x : x._id;
+}
+
+function campusIdOfHall(h: IHall): string {
+    const x = h.campusId;
+    return typeof x === 'string' ? x : x._id;
+}
+
+function hallIdOfPeriod(p: IPeriod): string {
+    if (!p.hallId) return '';
+    return typeof p.hallId === 'string' ? p.hallId : p.hallId._id;
+}
+
 const schema = z.object({
     departmentId: z.string().min(1, 'Department is required'),
     classId: z.string().min(1, 'Class is required'),
@@ -69,6 +86,7 @@ const schema = z.object({
     type: z.enum(['Lab', 'Theory']),
     from: z.string().min(1, 'From is required'),
     to: z.string().min(1, 'To is required'),
+    hallId: z.string().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
@@ -86,6 +104,7 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const { data: seRes } = useGetAllSemestersQuery({ query: {}, options: { limit: 200, page: 1 } });
     const { data: depRes } = useGetAllDepartmentsQuery({ query: {}, options: { limit: 200, page: 1 } });
     const { data: lecRes } = useGetAllLecturersQuery({ query: {}, options: { limit: 500, page: 1 } });
+    const { data: hallRes } = useGetAllHallsQuery({ query: {}, options: { limit: 500, page: 1 } });
 
     const deptOpts = useMemo(() => (depRes?.docs ?? []).map((d) => ({ value: d._id, label: d.name })), [depRes]);
     const semOpts = useMemo(() => (seRes?.docs ?? []).map((s) => ({ value: s._id, label: s.name })), [seRes]);
@@ -113,11 +132,30 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
             type: 'Theory',
             from: '',
             to: '',
+            hallId: '',
             status: 'ACTIVE',
         },
     });
 
     const departmentId = watch('departmentId');
+    const classId = watch('classId');
+
+    const selectedClass = useMemo(
+        () => (classId ? (lcRes?.docs ?? []).find((c) => c._id === classId) : undefined),
+        [lcRes, classId],
+    );
+
+    const classCampusId = selectedClass ? campusIdOfClass(selectedClass) : '';
+
+    const hallOpts = useMemo(() => {
+        if (!classCampusId) return [];
+        return (hallRes?.docs ?? [])
+            .filter((h) => campusIdOfHall(h) === classCampusId)
+            .map((h) => {
+                const code = h.code ? ` (${h.code})` : '';
+                return { value: h._id, label: `${h.name}${code}` };
+            });
+    }, [hallRes, classCampusId]);
 
     const classOpts = useMemo(() => {
         if (!departmentId) return [];
@@ -153,6 +191,7 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                 type: itemToEdit.type,
                 from: normalizeTimeHHmm(itemToEdit.from),
                 to: normalizeTimeHHmm(itemToEdit.to),
+                hallId: hallIdOfPeriod(itemToEdit),
                 status: itemToEdit.status,
             });
         } else {
@@ -166,13 +205,19 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                 type: 'Theory',
                 from: '',
                 to: '',
+                hallId: '',
                 status: 'ACTIVE',
             });
         }
     }, [itemToEdit, lcRes?.docs, coRes?.docs, reset]);
 
     const onSubmit = async (data: FormData) => {
-        const { departmentId: _d, ...payload } = data;
+        const { departmentId: _d, ...rest } = data;
+        const payload: Record<string, unknown> = { ...rest };
+        if (!payload.hallId) {
+            if (isEdit) payload.hallId = null;
+            else delete payload.hallId;
+        }
         try {
             if (isEdit && itemToEdit) {
                 await updateItem({ id: itemToEdit._id, data: payload }).unwrap();
@@ -220,7 +265,10 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                         id="p-class"
                         label="Class"
                         value={value}
-                        onChange={onChange}
+                        onChange={(v) => {
+                            onChange(v);
+                            setValue('hallId', '');
+                        }}
                         onBlur={onBlur}
                         options={classOpts}
                         error={errors.classId?.message}
@@ -241,6 +289,22 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                         options={courseOpts}
                         error={errors.courseId?.message}
                         disabled={deptLocked || !departmentId}
+                    />
+                )}
+            />
+            <Controller
+                name="hallId"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="p-hall"
+                        label="Hall (optional)"
+                        value={value || ''}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={[{ value: '', label: '—' }, ...hallOpts]}
+                        error={errors.hallId?.message}
+                        disabled={isSubmitting || !classId}
                     />
                 )}
             />

@@ -19,6 +19,7 @@ import { SemesterModule } from './modules/semester/semester.module';
 import { LectureClassModule } from './modules/classes/lecture-class.module';
 import { PeriodModule } from './modules/period/period.module';
 import { HallModule } from './modules/hall/hall.module';
+import { ClassSessionModule } from './modules/class-session/class-session.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { HallModule } from './modules/hall/hall.module';
     LectureClassModule,
     PeriodModule,
     HallModule,
+    ClassSessionModule,
   ],
   controllers: [AppController],
   providers: [

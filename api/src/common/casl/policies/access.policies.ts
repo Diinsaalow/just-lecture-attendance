@@ -139,6 +139,23 @@ export const DeletePeriodPolicy = createPolicyHandler(
   Subject.Period,
 );
 
+export const CreateClassSessionPolicy = createPolicyHandler(
+  Action.Create,
+  Subject.ClassSession,
+);
+export const ReadClassSessionPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.ClassSession,
+);
+export const UpdateClassSessionPolicy = createPolicyHandler(
+  Action.Update,
+  Subject.ClassSession,
+);
+export const DeleteClassSessionPolicy = createPolicyHandler(
+  Action.Delete,
+  Subject.ClassSession,
+);
+
 export const CreateUserPolicy = createPolicyHandler(Action.Create, Subject.User);
 export const ReadUserPolicy = createPolicyHandler(Action.Read, Subject.User);
 export const UpdateUserPolicy = createPolicyHandler(Action.Update, Subject.User);

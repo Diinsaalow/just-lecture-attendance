@@ -1,9 +1,18 @@
 import React from 'react';
 import { useGetPeriodByIdQuery } from '../../../store/api/periodApi';
+import type { IPeriod } from '../../../types/period';
 
 function labelRef(ref: unknown, key: string): string {
     if (typeof ref === 'object' && ref !== null && key in ref) return String((ref as Record<string, unknown>)[key]);
     return '-';
+}
+
+function hallLine(hall: IPeriod['hallId']): string {
+    if (!hall) return '—';
+    if (typeof hall === 'string') return hall;
+    const name = hall.name ?? '';
+    const code = hall.code ? ` (${hall.code})` : '';
+    return name || code ? `${name}${code}` : '—';
 }
 
 interface Props {
@@ -26,6 +35,7 @@ const PeriodDetail: React.FC<Props> = ({ periodId }) => {
             <p>
                 {row.day} · {row.type} · {row.from}–{row.to}
             </p>
+            <p>Hall: {hallLine(row.hallId)}</p>
             <p>Status: {row.status}</p>
         </div>
     );
