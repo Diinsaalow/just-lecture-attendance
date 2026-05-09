@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import {
   ClassSessionDocument,
 } from './schemas/class-session.schema';
 import { ClassSessionStatus } from './enums/class-session-status.enum';
+import { CreateClassSessionDto } from './dto/create-class-session.dto';
 import { GenerateClassSessionsDto } from './dto/generate-class-sessions.dto';
 import { UpdateClassSessionDto } from './dto/update-class-session.dto';
 import {
@@ -220,6 +222,29 @@ export class ClassSessionService {
     };
   }
 
+  async create(
+    dto: CreateClassSessionDto,
+    user: AuthUserPayload,
+  ): Promise<ClassSession> {
+    const snapshot = await this.buildSnapshotFromPeriod(
+      dto.periodId,
+      dto.scheduledDate,
+      user,
+    );
+
+    try {
+      const doc = await this.classSessionModel.create({
+        ...snapshot,
+        status: dto.status ?? ClassSessionStatus.SCHEDULED,
+        createdBy: new Types.ObjectId(user.id),
+      });
+      return this.populateSession(doc._id as Types.ObjectId);
+    } catch (error) {
+      this.throwIfDuplicate(error);
+      throw error;
+    }
+  }
+
   async findAllPaginated(
     q: TableQueryDto,
     user: AuthUserPayload,
@@ -238,6 +263,25 @@ export class ClassSessionService {
       baseMatch:
         Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
+  }
+
+  async bulkRemove(
+    ids: string[],
+    user: AuthUserPayload,
+  ): Promise<{ deletedCount: number; message: string }> {
+    const valid = ids.filter((id) => Types.ObjectId.isValid(id));
+    if (!valid.length) {
+      return { deletedCount: 0, message: 'No valid ids' };
+    }
+    const baseMatch = await this.userScopeService.classSessionMatch(user);
+    const filter: Record<string, unknown> = {
+      _id: { $in: valid.map((id) => new Types.ObjectId(id)) },
+    };
+    if (Object.keys(baseMatch).length > 0) {
+      Object.assign(filter, baseMatch);
+    }
+    const r = await this.classSessionModel.deleteMany(filter as never).exec();
+    return { deletedCount: r.deletedCount ?? 0, message: 'Deleted' };
   }
 
   async findById(id: string, user: AuthUserPayload): Promise<ClassSession> {
@@ -267,8 +311,139 @@ export class ClassSessionService {
     user: AuthUserPayload,
   ): Promise<ClassSession> {
     await this.userScopeService.ensureClassSessionInScope(user, id);
+    const existing = await this.classSessionModel.findById(id).exec();
+    if (!existing) {
+      throw new NotFoundException('Class session not found');
+    }
+
+    const patch: Record<string, unknown> = {};
+    const unset: Record<string, ''> = {};
+
+    if (dto.periodId || dto.scheduledDate) {
+      const snapshot = await this.buildSnapshotFromPeriod(
+        dto.periodId ?? String(existing.periodId),
+        dto.scheduledDate ?? existing.scheduledDate.toISOString(),
+        user,
+      );
+      Object.assign(patch, snapshot);
+      if (!snapshot.hallId) {
+        unset.hallId = '';
+        delete patch.hallId;
+      }
+    }
+
+    if (dto.status) {
+      patch.status = dto.status;
+    }
+
+    if (!Object.keys(patch).length && !Object.keys(unset).length) {
+      return this.populateSession(existing._id as Types.ObjectId);
+    }
+
+    try {
+      const update: Record<string, unknown> = { $set: patch };
+      if (Object.keys(unset).length) {
+        update.$unset = unset;
+      }
+      const doc = await this.classSessionModel
+        .findByIdAndUpdate(id, update, { new: true })
+        .populate([
+          { path: 'classId', select: 'name' },
+          { path: 'courseId', select: 'name' },
+          { path: 'lecturerId', select: 'username firstName lastName' },
+          { path: 'semesterId', select: 'name' },
+          { path: 'hallId', select: 'name code' },
+        ])
+        .exec();
+      if (!doc) {
+        throw new NotFoundException('Class session not found');
+      }
+      return doc;
+    } catch (error) {
+      this.throwIfDuplicate(error);
+      throw error;
+    }
+  }
+
+  async remove(id: string, user: AuthUserPayload): Promise<void> {
+    await this.userScopeService.ensureClassSessionInScope(user, id);
+    const doc = await this.classSessionModel.findByIdAndDelete(id).exec();
+    if (!doc) {
+      throw new NotFoundException('Class session not found');
+    }
+  }
+
+  private async buildSnapshotFromPeriod(
+    periodId: string,
+    scheduledDateInput: string,
+    user: AuthUserPayload,
+  ): Promise<Record<string, unknown>> {
+    await this.userScopeService.ensurePeriodInScope(user, periodId);
+
+    const scheduledDate = startOfUtcDay(new Date(scheduledDateInput));
+    if (isNaN(scheduledDate.getTime())) {
+      throw new BadRequestException('Invalid scheduled date');
+    }
+
+    const period = await this.periodModel.findById(periodId).lean();
+    if (!period) {
+      throw new NotFoundException('Period not found');
+    }
+
+    const semester = await this.semesterModel.findById(period.semesterId).lean();
+    if (!semester) {
+      throw new BadRequestException('Period semester was not found');
+    }
+    const start = startOfUtcDay(new Date(semester.startDate));
+    const end = startOfUtcDay(new Date(semester.endDate));
+    if (scheduledDate < start || scheduledDate > end) {
+      throw new BadRequestException(
+        'Scheduled date must be within the period semester date range',
+      );
+    }
+
+    const dow = utcDayIndexFromWeekdayName(period.day);
+    if (dow === null || scheduledDate.getUTCDay() !== dow) {
+      throw new BadRequestException(
+        'Scheduled date must match the selected period weekday',
+      );
+    }
+
+    const lectureClass = await this.lectureClassModel
+      .findById(period.classId)
+      .lean();
+    if (!lectureClass) {
+      throw new BadRequestException('Period class was not found');
+    }
+    const department = await this.departmentModel
+      .findById(lectureClass.departmentId)
+      .lean();
+    if (!department) {
+      throw new BadRequestException('Class department was not found');
+    }
+
+    return {
+      periodId: new Types.ObjectId(periodId),
+      scheduledDate,
+      semesterId: period.semesterId,
+      classId: period.classId,
+      courseId: period.courseId,
+      lecturerId: period.lecturerId,
+      ...(period.hallId ? { hallId: period.hallId } : {}),
+      dayLabel: period.day,
+      fromTime: period.from,
+      toTime: period.to,
+      type: period.type,
+      facultyId: department.facultyId,
+      departmentId: lectureClass.departmentId,
+      campusId: lectureClass.campusId,
+      academicYearId: lectureClass.academicYearId,
+    };
+  }
+
+  private async populateSession(id: Types.ObjectId): Promise<ClassSession> {
     const doc = await this.classSessionModel
-      .findByIdAndUpdate(id, dto, { new: true })
+      .findById(id)
       .populate([
         { path: 'classId', select: 'name' },
         { path: 'courseId', select: 'name' },
@@ -281,5 +456,18 @@ export class ClassSessionService {
       throw new NotFoundException('Class session not found');
     }
     return doc;
+  }
+
+  private throwIfDuplicate(error: unknown): void {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: number }).code === 11000
+    ) {
+      throw new ConflictException(
+        'A class session already exists for this period and date',
+      );
+    }
   }
 }

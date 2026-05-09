@@ -2,9 +2,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const configService = app.get(ConfigService);
 
   // Parse bracket notation (options[page], search[keyword], etc.) into nested objects for TableQueryDto
   app.set('query parser', 'extended');
@@ -27,5 +29,8 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
   await app.listen(process.env.PORT ?? 5000);
+  console.log(
+    `Application is running on: http://localhost:${configService.get<number>('PORT')}`,
+  );
 }
 void bootstrap();

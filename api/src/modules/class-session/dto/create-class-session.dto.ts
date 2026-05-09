@@ -1,14 +1,13 @@
 import { IsDateString, IsEnum, IsMongoId, IsOptional } from 'class-validator';
 import { ClassSessionStatus } from '../enums/class-session-status.enum';
 
-export class UpdateClassSessionDto {
-  @IsOptional()
+export class CreateClassSessionDto {
   @IsMongoId()
-  periodId?: string;
+  periodId: string;
 
-  @IsOptional()
+  /** Calendar teaching day. Stored as UTC midnight. */
   @IsDateString()
-  scheduledDate?: string;
+  scheduledDate: string;
 
   @IsOptional()
   @IsEnum(ClassSessionStatus)

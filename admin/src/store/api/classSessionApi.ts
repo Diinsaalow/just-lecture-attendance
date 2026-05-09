@@ -46,7 +46,10 @@ export const classSessionApi = new ClassSessionApi().createApi();
 export const {
     useGetAllQuery: useGetAllClassSessionsQuery,
     useGetByIdQuery: useGetClassSessionByIdQuery,
+    useCreateMutation: useCreateClassSessionMutation,
     useUpdateMutation: useUpdateClassSessionMutation,
+    useDeleteMutation: useDeleteClassSessionMutation,
+    useBulkDeleteMutation: useBulkDeleteClassSessionsMutation,
     useGenerateClassSessionsMutation,
     useClassesForGenerationQuery,
     useSemestersForGenerationQuery,

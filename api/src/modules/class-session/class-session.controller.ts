@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -12,19 +13,32 @@ import {
 import { CheckPolicies } from '../../common/casl/guards/policies.guard';
 import {
   CreateClassSessionPolicy,
+  DeleteClassSessionPolicy,
   ReadClassSessionPolicy,
   UpdateClassSessionPolicy,
 } from '../../common/casl/policies/access.policies';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BulkIdsDto } from '../../common/dto/bulk-ids.dto';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { ClassSessionService } from './class-session.service';
+import { CreateClassSessionDto } from './dto/create-class-session.dto';
 import { GenerateClassSessionsDto } from './dto/generate-class-sessions.dto';
 import { UpdateClassSessionDto } from './dto/update-class-session.dto';
 
 @Controller('class-sessions')
 export class ClassSessionController {
   constructor(private readonly classSessionService: ClassSessionService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @CheckPolicies(CreateClassSessionPolicy)
+  create(
+    @Body() dto: CreateClassSessionDto,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.classSessionService.create(dto, user);
+  }
 
   @Post('generate')
   @HttpCode(HttpStatus.OK)
@@ -58,6 +72,13 @@ export class ClassSessionController {
     return this.classSessionService.findAllPaginated(q, user);
   }
 
+  @Delete('bulk/delete')
+  @HttpCode(HttpStatus.OK)
+  @CheckPolicies(DeleteClassSessionPolicy)
+  bulkRemove(@Body() body: BulkIdsDto, @CurrentUser() user: AuthUserPayload) {
+    return this.classSessionService.bulkRemove(body.ids, user);
+  }
+
   @Get(':id')
   @CheckPolicies(ReadClassSessionPolicy)
   findOne(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
@@ -72,5 +93,12 @@ export class ClassSessionController {
     @CurrentUser() user: AuthUserPayload,
   ) {
     return this.classSessionService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @CheckPolicies(DeleteClassSessionPolicy)
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
+    await this.classSessionService.remove(id, user);
   }
 }

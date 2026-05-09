@@ -187,7 +187,7 @@ export const protectedRoutes: RouteConfig[] = [
         layout: 'default',
         isPublic: false,
         resource: 'ClassSession',
-        action: ['read', 'create', 'update'],
+        action: ['read', 'create', 'update', 'delete'],
     },
     {
         path: '/classes',

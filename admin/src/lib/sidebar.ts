@@ -91,7 +91,7 @@ export const sidebarMenu: MenuItem[] = [
         icon: CalendarRange,
         path: '/class-sessions',
         resource: 'ClassSession',
-        action: ['read', 'create', 'update'],
+        action: ['read', 'create', 'update', 'delete'],
     },
     {
         title: 'classes_menu',
