@@ -6,8 +6,10 @@ export interface IHall {
     name: string;
     code: string;
     campusId: string | Pick<ICampus, '_id' | 'campusName'>;
-    building?: string;
-    floor?: string;
+    latitude?: number;
+    longitude?: number;
+    geofenceRadiusMeters?: number;
+    qrCodeToken?: string;
     capacity?: number;
     status: EntityStatus;
     createdBy?: string;

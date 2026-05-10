@@ -16,16 +16,18 @@ const schema = z
         name: z.string().min(1, 'Name is required'),
         code: z.string().min(1, 'Code is required'),
         campusId: z.string().min(1, 'Campus is required'),
-        building: z.string(),
-        floor: z.string(),
-        capacity: z.string(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
+        geofenceRadiusMeters: z.string().optional(),
+        capacity: z.string().optional(),
         status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
     })
     .superRefine((data, ctx) => {
-        if (data.capacity.trim() === '') return;
-        const n = Number(data.capacity);
-        if (!Number.isFinite(n) || n < 0) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid capacity (0 or more)', path: ['capacity'] });
+        if (data.capacity && data.capacity.trim() !== '') {
+            const n = Number(data.capacity);
+            if (!Number.isFinite(n) || n < 0) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Enter a valid capacity (0 or more)', path: ['capacity'] });
+            }
         }
     });
 
@@ -57,8 +59,9 @@ const HallForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
             name: '',
             code: '',
             campusId: '',
-            building: '',
-            floor: '',
+            latitude: '',
+            longitude: '',
+            geofenceRadiusMeters: '50',
             capacity: '',
             status: 'ACTIVE',
         },
@@ -73,8 +76,9 @@ const HallForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                 name: itemToEdit.name,
                 code: itemToEdit.code,
                 campusId: campusIdString(itemToEdit.campusId),
-                building: itemToEdit.building ?? '',
-                floor: itemToEdit.floor ?? '',
+                latitude: itemToEdit.latitude != null ? String(itemToEdit.latitude) : '',
+                longitude: itemToEdit.longitude != null ? String(itemToEdit.longitude) : '',
+                geofenceRadiusMeters: itemToEdit.geofenceRadiusMeters != null ? String(itemToEdit.geofenceRadiusMeters) : '50',
                 capacity: itemToEdit.capacity != null ? String(itemToEdit.capacity) : '',
                 status: itemToEdit.status,
             });
@@ -84,13 +88,17 @@ const HallForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const onSubmit = async (data: FormData) => {
         try {
             const cap =
-                data.capacity.trim() === '' ? undefined : Number(data.capacity);
+                data.capacity && data.capacity.trim() !== '' ? Number(data.capacity) : undefined;
+            const lat = data.latitude?.trim() === '' ? undefined : Number(data.latitude);
+            const lng = data.longitude?.trim() === '' ? undefined : Number(data.longitude);
+            const radius = data.geofenceRadiusMeters?.trim() === '' ? undefined : Number(data.geofenceRadiusMeters);
             const payload = {
                 name: data.name,
                 code: data.code,
                 campusId: data.campusId,
-                building: data.building.trim() || undefined,
-                floor: data.floor.trim() || undefined,
+                latitude: lat,
+                longitude: lng,
+                geofenceRadiusMeters: radius,
                 capacity: cap,
                 status: data.status,
             };
@@ -138,17 +146,24 @@ const HallForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                 )}
             />
             <Controller
-                name="building"
+                name="latitude"
                 control={control}
                 render={({ field }) => (
-                    <FormInput id="hall-building" type="text" label="Building" error={errors.building?.message} disabled={isSubmitting} {...field} value={field.value} />
+                    <FormInput id="hall-lat" type="number" step="any" label="Latitude" error={errors.latitude?.message} disabled={isSubmitting} {...field} value={field.value || ''} />
                 )}
             />
             <Controller
-                name="floor"
+                name="longitude"
                 control={control}
                 render={({ field }) => (
-                    <FormInput id="hall-floor" type="text" label="Floor" error={errors.floor?.message} disabled={isSubmitting} {...field} value={field.value} />
+                    <FormInput id="hall-lng" type="number" step="any" label="Longitude" error={errors.longitude?.message} disabled={isSubmitting} {...field} value={field.value || ''} />
+                )}
+            />
+            <Controller
+                name="geofenceRadiusMeters"
+                control={control}
+                render={({ field }) => (
+                    <FormInput id="hall-radius" type="number" min={0} label="Geofence Radius (Meters)" error={errors.geofenceRadiusMeters?.message} disabled={isSubmitting} {...field} value={field.value || ''} />
                 )}
             />
             <Controller
@@ -165,7 +180,7 @@ const HallForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                         name={field.name}
                         onBlur={field.onBlur}
                         ref={field.ref}
-                        value={field.value}
+                        value={field.value || ''}
                         onChange={(v: string) => field.onChange(v)}
                     />
                 )}

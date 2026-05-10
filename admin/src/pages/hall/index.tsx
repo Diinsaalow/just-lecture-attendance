@@ -67,8 +67,6 @@ const HallList = () => {
         { accessor: 'name', title: 'Name', type: 'text', sortable: true },
         { accessor: 'code', title: 'Code', type: 'text', sortable: true },
         { accessor: 'campusId', title: 'Campus', type: 'text', sortable: false, render: (r) => <span>{cellCampus(r.campusId)}</span> },
-        { accessor: 'building', title: 'Building', type: 'text', sortable: true },
-        { accessor: 'floor', title: 'Floor', type: 'text', sortable: true },
         {
             accessor: 'capacity',
             title: 'Capacity',
@@ -115,7 +113,7 @@ const HallList = () => {
                 title="Halls"
                 columns={columns}
                 fetchData={useGetAllHallsQuery}
-                searchFields={['name', 'code', 'building', 'floor', 'status']}
+                searchFields={['name', 'code', 'status']}
                 sortCol="createdAt"
                 className="mt-5"
                 query={{}}

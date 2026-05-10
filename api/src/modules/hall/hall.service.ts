@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomUUID } from 'crypto';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { UserScopeService } from '../../common/casl/user-scope.service';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
@@ -30,16 +31,15 @@ export class HallService {
   ): Promise<Hall> {
     await this.userScopeService.ensureCampusInScope(user, dto.campusId);
     await this.campusService.ensureExists(dto.campusId);
-    return this.hallModel.create({
-      name: dto.name,
-      code: dto.code.trim(),
+    const data = {
+      ...dto,
       campusId: new Types.ObjectId(dto.campusId),
-      building: dto.building,
-      floor: dto.floor,
-      capacity: dto.capacity,
-      status: dto.status,
+      qrCodeToken: randomUUID(),
       createdBy: new Types.ObjectId(createdByUserId),
-    });
+    };
+    const doc = new this.hallModel(data);
+    await doc.save();
+    return doc.populate({ path: 'campusId', select: 'campusName' });
   }
 
   async findAllPaginated(
@@ -48,7 +48,7 @@ export class HallService {
   ): Promise<PaginatedResult<Hall>> {
     const baseMatch = await this.userScopeService.hallMatch(user);
     return paginateFind<HallDocument>(this.hallModel, q, {
-      searchFields: ['name', 'code', 'building', 'floor', 'status'],
+      searchFields: ['name', 'code', 'status'],
       defaultSort: { createdAt: -1 },
       baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
       populate: [{ path: 'campusId', select: 'campusName' }],
@@ -147,5 +147,16 @@ export class HallService {
     if (!doc) {
       throw new NotFoundException('Hall not found');
     }
+  }
+
+  async regenerateQrToken(id: string, user: AuthUserPayload) {
+    await this.userScopeService.ensureHallInScope(user, id);
+    const newQr = randomUUID();
+    const doc = await this.hallModel
+      .findByIdAndUpdate(id, { qrCodeToken: newQr }, { new: true })
+      .populate({ path: 'campusId', select: 'campusName' })
+      .exec();
+    if (!doc) throw new NotFoundException('Hall not found');
+    return doc;
   }
 }

@@ -20,7 +20,6 @@ export const Subject = {
   AttendanceRecord: 'AttendanceRecord',
   AbsenceSubmission: 'AbsenceSubmission',
   BoundDevice: 'BoundDevice',
-  HallQr: 'HallQr',
   AttendanceSettings: 'AttendanceSettings',
 } as const;
 

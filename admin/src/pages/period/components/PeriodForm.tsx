@@ -58,6 +58,7 @@ function departmentIdOfClass(c: ILectureClass): string {
 
 function departmentIdOfCourse(c: ICourse): string {
     const d = c.departmentId;
+    if (!d) return '';
     return typeof d === 'string' ? d : d._id;
 }
 

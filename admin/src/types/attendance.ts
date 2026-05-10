@@ -1,5 +1,5 @@
 export interface IAttendanceSettings {
-    _id?: string;
+    _id: string;
     lateThresholdMinutes: number;
     earlyCheckoutThresholdMinutes: number;
     checkInWindowBeforeMinutes: number;

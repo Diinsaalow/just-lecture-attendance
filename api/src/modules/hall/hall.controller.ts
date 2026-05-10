@@ -71,4 +71,14 @@ export class HallController {
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
     await this.hallService.remove(id, user);
   }
+
+  @Post(':id/qr/regenerate')
+  @HttpCode(HttpStatus.OK)
+  @CheckPolicies(UpdateHallPolicy)
+  regenerateQr(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.hallService.regenerateQrToken(id, user);
+  }
 }

@@ -8,6 +8,21 @@ class HallApi extends BaseApi<IHall> {
             tagType: 'halls',
         });
     }
+
+    createApi() {
+        const base = super.createApi();
+        return base.injectEndpoints({
+            endpoints: (builder) => ({
+                regenerateHallQr: builder.mutation<IHall, string>({
+                    query: (id) => ({
+                        url: `/halls/${id}/qr/regenerate`,
+                        method: 'POST',
+                    }),
+                    invalidatesTags: (result, error, id) => [{ type: 'halls', id }],
+                }),
+            }),
+        });
+    }
 }
 
 export const hallApi = new HallApi().createApi();
@@ -19,4 +34,5 @@ export const {
     useUpdateMutation: useUpdateHallMutation,
     useDeleteMutation: useDeleteHallMutation,
     useBulkDeleteMutation: useBulkDeleteHallsMutation,
+    useRegenerateHallQrMutation,
 } = hallApi;

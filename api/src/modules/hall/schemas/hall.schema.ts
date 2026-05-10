@@ -15,14 +15,13 @@ export class Hall {
   @Prop({ required: true, trim: true })
   code: string;
 
-  @Prop({ type: Types.ObjectId, ref: Campus.name, required: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Campus',
+    required: true,
+    index: true,
+  })
   campusId: Types.ObjectId;
-
-  @Prop({ trim: true })
-  building?: string;
-
-  @Prop({ trim: true })
-  floor?: string;
 
   @Prop({ min: 0 })
   capacity?: number;
@@ -38,6 +37,10 @@ export class Hall {
   /** Geofence radius in metres around the hall centre. */
   @Prop({ type: Number })
   geofenceRadiusMeters?: number;
+
+  /** Physical QR code payload for fallback check-ins */
+  @Prop({ type: String, unique: true, sparse: true })
+  qrCodeToken?: string;
 
   @Prop({
     type: String,

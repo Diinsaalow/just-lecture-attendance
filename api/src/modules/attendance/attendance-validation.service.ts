@@ -20,7 +20,6 @@ import { CheckOutDto } from './dto/check-out.dto';
 import { AdminCheckOutDto } from './dto/admin-check-out.dto';
 import { AttendanceSettingsService } from '../attendance-settings/attendance-settings.service';
 import { DeviceService } from '../device/device.service';
-import { HallQrService } from '../hall-qr/hall-qr.service';
 import { CheckInMethod } from './enums/check-in-method.enum';
 import { AttendanceStatus } from './enums/attendance-status.enum';
 import { isWithinGeofence } from '../hall/hall-geofence.util';
@@ -36,7 +35,6 @@ export class AttendanceValidationService {
     private readonly hallModel: Model<HallDocument>,
     private readonly settingsService: AttendanceSettingsService,
     private readonly deviceService: DeviceService,
-    private readonly qrService: HallQrService,
   ) {}
 
   /**
@@ -160,17 +158,13 @@ export class AttendanceValidationService {
 
     // 8. Method Validation (QR Code)
     if (dto.method === CheckInMethod.QR_CODE && settings.qrCodeEnabled) {
+      const hall = await this.hallModel.findById(session.hallId).exec();
+      if (!hall) throw new NotFoundException('Assigned hall not found');
       if (!dto.qrPayload) {
-        throw new BadRequestException(
-          'QR payload is required for QR_CODE method',
-        );
+        throw new BadRequestException('QR payload missing for QR check-in');
       }
-      const verifiedPayload = this.qrService.verifyToken(dto.qrPayload);
-      if (session.hallId) {
-        this.qrService.assertMatchesSession(
-          String(session.hallId),
-          verifiedPayload,
-        );
+      if (hall.qrCodeToken !== dto.qrPayload) {
+        throw new BadRequestException('Invalid or expired QR code for this hall');
       }
     }
 

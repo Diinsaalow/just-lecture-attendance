@@ -10,7 +10,8 @@ import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { AdminCheckOutDto } from './dto/admin-check-out.dto';
 import { TableQueryDto } from '../../common/dto/table-query.dto';
-import { buildMongooseQuery } from '../../common/utils/query-builder.util';
+import { Types } from 'mongoose';
+import { paginateFind } from '../../common/utils/mongo-table-query';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 
 @Injectable()
@@ -50,61 +51,30 @@ export class AttendanceService {
   }
 
   async findMyHistory(query: TableQueryDto, user: AuthUserPayload) {
-    // Force scope to current user
-    const scopedQuery = { ...query };
-    if (!scopedQuery.filters) scopedQuery.filters = {};
-    scopedQuery.filters.instructorUserId = user.id;
-
-    const { filters, sort, skip, limit } = buildMongooseQuery(scopedQuery);
-
-    const [data, total] = await Promise.all([
-      this.attendanceModel
-        .find(filters)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .populate('sessionId')
-        .populate('hallId', 'name code')
-        .exec(),
-      this.attendanceModel.countDocuments(filters),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page: query.page || 1,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return paginateFind<AttendanceRecordDocument>(this.attendanceModel, query, {
+      searchFields: ['status', 'scheduledStart', 'scheduledEnd'],
+      defaultSort: { scheduledDate: -1 },
+      populate: [
+        { path: 'sessionId' },
+        { path: 'hallId', select: 'name code' },
+      ],
+      baseMatch: { instructorUserId: new Types.ObjectId(user.id) },
+    });
   }
 
   async findAllPaginated(query: TableQueryDto, userScopeFilters: any) {
-    const { filters, sort, skip, limit } = buildMongooseQuery(query);
-    const finalFilters = { ...filters, ...userScopeFilters };
-
-    const [data, total] = await Promise.all([
-      this.attendanceModel
-        .find(finalFilters)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .populate('instructorUserId', 'username email')
-        .populate('sessionId')
-        .populate('hallId', 'name code')
-        .exec(),
-      this.attendanceModel.countDocuments(finalFilters),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page: query.page || 1,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return paginateFind<AttendanceRecordDocument>(this.attendanceModel, query, {
+      searchFields: ['status', 'scheduledStart', 'scheduledEnd'],
+      defaultSort: { scheduledDate: -1 },
+      populate: [
+        { path: 'instructorUserId', select: 'username email' },
+        { path: 'sessionId' },
+        { path: 'hallId', select: 'name code' },
+      ],
+      baseMatch:
+        userScopeFilters && Object.keys(userScopeFilters).length > 0
+          ? userScopeFilters
+          : undefined,
+    });
   }
 }

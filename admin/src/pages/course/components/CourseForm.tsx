@@ -112,7 +112,7 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect
                         id="c-dept"
                         label="Department"
-                        value={value}
+                        value={value || ''}
                         onChange={onChange}
                         onBlur={onBlur}
                         options={depOpts}
@@ -128,13 +128,12 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect
                         id="c-type"
                         label="Type"
-                        value={value}
+                        value={value || ''}
                         onChange={onChange}
                         onBlur={onBlur}
                         options={courseTypeOpts}
                         error={errors.type?.message}
                         disabled={isSubmitting}
-                        placeholder="Select type..."
                     />
                 )}
             />

@@ -28,16 +28,6 @@ export class CreateHallDto {
   campusId: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  building?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  floor?: string;
-
-  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)

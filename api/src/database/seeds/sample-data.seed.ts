@@ -14,6 +14,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { TimetablePeriodType } from '../../modules/period/enums/timetable-period-type.enum';
+import { CourseType } from '../../modules/course/enums/course-type.enum';
 
 const BCRYPT_ROUNDS = 10;
 const SEED_SUPER_ADMIN_USERNAME = 'admin';
@@ -141,7 +142,7 @@ async function bootstrap() {
     course = await courseModel.create({
       name: 'Introduction to Programming',
       departmentId: departmentId,
-      type: 'Core',
+      type: CourseType.CORE,
       credit: 3,
       lecturers: [userId],
       createdBy: userId,

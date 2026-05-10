@@ -44,7 +44,7 @@ export class CourseService {
       name: dto.name,
       departmentId: dto.departmentId
         ? new Types.ObjectId(dto.departmentId)
-        : null,
+        : undefined,
       type: dto.type,
       credit: dto.credit,
       lecturers: lecturerIds,

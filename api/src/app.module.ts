@@ -22,7 +22,6 @@ import { HallModule } from './modules/hall/hall.module';
 import { ClassSessionModule } from './modules/class-session/class-session.module';
 import { AttendanceSettingsModule } from './modules/attendance-settings/attendance-settings.module';
 import { DeviceModule } from './modules/device/device.module';
-import { HallQrModule } from './modules/hall-qr/hall-qr.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 
 @Module({
@@ -48,7 +47,6 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
     ClassSessionModule,
     AttendanceSettingsModule,
     DeviceModule,
-    HallQrModule,
     AttendanceModule,
   ],
   controllers: [AppController],

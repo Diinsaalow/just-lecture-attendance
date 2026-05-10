@@ -11,7 +11,6 @@ import {
 import { Hall, HallSchema } from '../hall/schemas/hall.schema';
 import { AttendanceSettingsModule } from '../attendance-settings/attendance-settings.module';
 import { DeviceModule } from '../device/device.module';
-import { HallQrModule } from '../hall-qr/hall-qr.module';
 import { CaslModule } from '../../common/casl/casl.module';
 import { AttendanceValidationService } from './attendance-validation.service';
 import { AttendanceService } from './attendance.service';
@@ -26,7 +25,6 @@ import { AttendanceController } from './attendance.controller';
     ]),
     AttendanceSettingsModule,
     DeviceModule,
-    HallQrModule,
     CaslModule,
   ],
   controllers: [AttendanceController],
