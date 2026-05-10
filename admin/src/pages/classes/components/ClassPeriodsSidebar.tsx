@@ -53,8 +53,8 @@ const ClassPeriodsSidebar: React.FC<Props> = ({ isOpen, setIsOpen, classId, clas
                         </thead>
                         <tbody>
                             {periods.map((p) => {
-                                const course = typeof p.courseId === 'object' ? (p.courseId as any).name : '-';
-                                const hall = typeof p.hallId === 'object' ? (p.hallId as any).name : '-';
+                                const course = p.courseId && typeof p.courseId === 'object' ? (p.courseId as any).name : '-';
+                                const hall = p.hallId && typeof p.hallId === 'object' ? (p.hallId as any).name : '-';
                                 return (
                                     <tr key={p._id} className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                         <td className="py-4 px-3 font-medium text-gray-900 dark:text-gray-100">{p.day}</td>
