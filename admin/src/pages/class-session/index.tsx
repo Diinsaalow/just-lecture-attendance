@@ -35,6 +35,19 @@ function hallLabel(hall: IClassSession['hallId']): string {
     return `${name}${code}`.trim() || '-';
 }
 
+function lecturerLabel(lecturer: unknown): string {
+    if (!lecturer || typeof lecturer !== 'object') return '-';
+    const l = lecturer as Record<string, string>;
+    const firstName = l.firstName ?? '';
+    const lastName = l.lastName ?? '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const username = l.username ?? '';
+    if (fullName && username) {
+        return `${fullName} (${username.toUpperCase()})`;
+    }
+    return fullName || (username ? username.toUpperCase() : '-');
+}
+
 const ClassSessionList = () => {
     const { selectedId, showSidebar, openSidebar, closeSidebar } = useSidebarDetail();
     const { can } = usePermission();
@@ -136,7 +149,7 @@ const ClassSessionList = () => {
         },
         { accessor: 'classId', title: 'Class', type: 'text', sortable: false, render: (row) => <span>{cell(row.classId, 'name')}</span> },
         { accessor: 'courseId', title: 'Course', type: 'text', sortable: false, render: (row) => <span>{cell(row.courseId, 'name')}</span> },
-        { accessor: 'lecturerId', title: 'Lecturer', type: 'text', sortable: false, render: (row) => <span>{cell(row.lecturerId, 'username')}</span> },
+        { accessor: 'lecturerId', title: 'Lecturer', type: 'text', sortable: false, render: (row) => <span>{lecturerLabel(row.lecturerId)}</span> },
         { accessor: 'semesterId', title: 'Semester', type: 'text', sortable: false, render: (row) => <span>{cell(row.semesterId, 'name')}</span> },
         { accessor: 'hallId', title: 'Hall', type: 'text', sortable: false, render: (row) => <span>{hallLabel(row.hallId)}</span> },
         { accessor: 'dayLabel', title: 'Day', type: 'text', sortable: true },
