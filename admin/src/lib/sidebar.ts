@@ -1,18 +1,4 @@
-import {
-    LayoutDashboard,
-    Users,
-    Settings,
-    GraduationCap,
-    CalendarDays,
-    CalendarRange,
-    Building2,
-    School,
-    Layers,
-    BookOpen,
-    Library,
-    Clock,
-    MapPinned,
-} from 'lucide-react';
+import { LayoutDashboard, Users, Settings, GraduationCap, CalendarDays, CalendarRange, Building2, School, Layers, BookOpen, Library, Clock, MapPinned } from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
 
@@ -101,6 +87,10 @@ export const sidebarMenu: MenuItem[] = [
         action: academicActions,
     },
     {
+        title: 'system settings',
+        isSection: true,
+    },
+    {
         title: 'users',
         icon: Users,
         resource: 'User',
@@ -175,8 +165,7 @@ export const cleanEmptySections = (menuItems: MenuItem[]): MenuItem[] => {
     return cleaned;
 };
 
-const ACADEMIC_PATH_RE =
-    /^\/(academic-years|campuses|halls|faculties|departments|semesters|courses|periods|class-sessions|classes)(\/.*)?$/;
+const ACADEMIC_PATH_RE = /^\/(academic-years|campuses|halls|faculties|departments|semesters|courses|periods|class-sessions|classes)(\/.*)?$/;
 
 /** Hide the content management section header if no academic pages remain after permission filtering. */
 export const pruneOrphanContentManagementSection = (menuItems: MenuItem[]): MenuItem[] => {
