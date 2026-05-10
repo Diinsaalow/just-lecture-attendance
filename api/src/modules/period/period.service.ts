@@ -206,6 +206,44 @@ export class PeriodService {
     }
   }
 
+  async findByClass(classId: string, user: AuthUserPayload): Promise<Period[]> {
+    await this.userScopeService.ensureLectureClassInScope(user, classId);
+    const baseMatch = await this.userScopeService.periodMatch(user);
+    const filter = {
+      classId: new Types.ObjectId(classId),
+      ...baseMatch,
+    };
+
+    const daysOrder = [
+      'Saturday',
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+    ];
+
+    const periods = await this.periodModel
+      .find(filter)
+      .populate([
+        { path: 'courseId', select: 'name' },
+        { path: 'lecturerId', select: 'username firstName lastName' },
+        { path: 'semesterId', select: 'name' },
+        { path: 'hallId', select: 'name code' },
+      ])
+      .exec();
+
+    return periods.sort((a, b) => {
+      const dayA = daysOrder.indexOf(a.day);
+      const dayB = daysOrder.indexOf(b.day);
+      if (dayA !== dayB) {
+        return dayA - dayB;
+      }
+      return a.from.localeCompare(b.from);
+    });
+  }
+
   private async ensureActiveUser(userId: string): Promise<void> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid lecturer id');

@@ -1,11 +1,12 @@
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'custom' | 'actions' | 'status' | 'toggle';
 
-export type ActionType = 'view' | 'edit' | 'delete' | 'restore' | 'permissions' | 'cancel' | 'suspend' | 'reschedule';
+export type ActionType = 'view' | 'edit' | 'delete' | 'restore' | 'permissions' | 'cancel' | 'suspend' | 'reschedule' | 'custom';
 
 export interface ActionConfig<T = any> {
     type: ActionType;
     icon?: React.ReactNode;
     label?: string;
+    tooltip?: string;
     onClick: (record: T) => void;
     show?: (record: T) => boolean;
     className?: string;

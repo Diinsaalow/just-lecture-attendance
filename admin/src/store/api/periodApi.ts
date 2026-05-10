@@ -8,6 +8,18 @@ class PeriodApi extends BaseApi<IPeriod> {
             tagType: 'periods',
         });
     }
+
+    createApi() {
+        const baseApi = super.createApi();
+        return baseApi.injectEndpoints({
+            endpoints: (builder) => ({
+                getPeriodsByClass: builder.query<IPeriod[], string>({
+                    query: (classId) => `/periods/class/${classId}`,
+                    providesTags: (result, error, classId) => [{ type: 'periods', id: `CLASS_${classId}` }],
+                }),
+            }),
+        });
+    }
 }
 
 export const periodApi = new PeriodApi().createApi();
@@ -19,4 +31,5 @@ export const {
     useUpdateMutation: useUpdatePeriodMutation,
     useDeleteMutation: useDeletePeriodMutation,
     useBulkDeleteMutation: useBulkDeletePeriodsMutation,
+    useGetPeriodsByClassQuery,
 } = periodApi;

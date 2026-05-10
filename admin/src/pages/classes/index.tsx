@@ -12,6 +12,8 @@ import type { ILectureClass } from '../../types/lectureClass';
 import type { ColumnConfig } from '../../types/columns';
 import LectureClassModal from './components/LectureClassModal';
 import LectureClassDetail from './components/LectureClassDetail';
+import ClassPeriodsSidebar from './components/ClassPeriodsSidebar';
+import { Calendar } from 'lucide-react';
 
 const ClassesList = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +23,14 @@ const ClassesList = () => {
     const [deleteItem] = useDeleteLectureClassMutation();
     const [bulkDelete] = useBulkDeleteLectureClassesMutation();
     const { selectedId, showSidebar, openSidebar, closeSidebar } = useSidebarDetail();
+
+    const [showTimetable, setShowTimetable] = useState(false);
+    const [timetableClass, setTimetableClass] = useState<{ id: string; name: string } | null>(null);
+
+    const openTimetable = (id: string, name: string) => {
+        setTimetableClass({ id, name });
+        setShowTimetable(true);
+    };
 
     const dep = (r: ILectureClass) =>
         typeof r.departmentId === 'object' && r.departmentId && 'name' in r.departmentId ? (r.departmentId as { name: string }).name : '-';
@@ -84,6 +94,12 @@ const ClassesList = () => {
                         setIsOpen(true);
                     },
                 },
+                {
+                    type: 'custom',
+                    icon: <Calendar className="w-4 h-4" />,
+                    tooltip: 'View Timetable',
+                    onClick: (r) => openTimetable(r._id, r.name),
+                },
                 { type: 'delete', onClick: (r) => handleDelete(r._id) },
             ],
         },
@@ -116,6 +132,12 @@ const ClassesList = () => {
                 sidebarContent={<LectureClassDetail classId={selectedId} />}
             />
             <LectureClassModal isOpen={isOpen} setIsOpen={setIsOpen} itemToEdit={itemToEdit} />
+            <ClassPeriodsSidebar
+                isOpen={showTimetable}
+                setIsOpen={setShowTimetable}
+                classId={timetableClass?.id || null}
+                className={timetableClass?.name}
+            />
         </div>
     );
 };

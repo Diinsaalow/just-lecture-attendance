@@ -74,4 +74,13 @@ export class PeriodController {
   async remove(@Param('id') id: string, @CurrentUser() user: AuthUserPayload) {
     await this.periodService.remove(id, user);
   }
+
+  @Get('class/:classId')
+  @CheckPolicies(ReadPeriodPolicy)
+  findByClass(
+    @Param('classId') classId: string,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.periodService.findByClass(classId, user);
+  }
 }

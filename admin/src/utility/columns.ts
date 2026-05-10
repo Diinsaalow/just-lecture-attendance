@@ -190,7 +190,7 @@ export function createColumn<T>(config: ColumnConfig<T>): DataTableColumn<T> {
                                     e.stopPropagation();
                                     action.onClick(record);
                                 },
-                                title: action.label || action.type,
+                                title: action.tooltip || action.label || action.type,
                             },
                             icon
                         );
