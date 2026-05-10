@@ -10,7 +10,7 @@ export interface IPeriod {
     _id: string;
     classId: string | Pick<ILectureClass, '_id' | 'name'>;
     courseId: string | Pick<ICourse, '_id' | 'name'>;
-    lecturerId: string | { _id: string; username?: string };
+    lecturerId: string | { _id: string; username?: string; firstName?: string; lastName?: string };
     semesterId: string | Pick<ISemester, '_id' | 'name'>;
     day: string;
     type: TimetablePeriodType;

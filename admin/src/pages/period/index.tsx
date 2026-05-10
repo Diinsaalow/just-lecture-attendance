@@ -27,6 +27,19 @@ function hallLabel(hall: unknown): string {
     return name || code || '-';
 }
 
+function lecturerLabel(lecturer: unknown): string {
+    if (!lecturer || typeof lecturer !== 'object') return '-';
+    const l = lecturer as Record<string, string>;
+    const firstName = l.firstName ?? '';
+    const lastName = l.lastName ?? '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const username = l.username ?? '';
+    if (fullName && username) {
+        return `${fullName} (${username.toUpperCase()})`;
+    }
+    return fullName || (username ? username.toUpperCase() : '-');
+}
+
 const PeriodList = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<IPeriod | null>(null);
@@ -68,7 +81,7 @@ const PeriodList = () => {
     const columns: ColumnConfig<IPeriod>[] = [
         { accessor: 'classId', title: 'Class', type: 'text', sortable: false, render: (r) => <span>{cell(r.classId, 'name')}</span> },
         { accessor: 'courseId', title: 'Course', type: 'text', sortable: false, render: (r) => <span>{cell(r.courseId, 'name')}</span> },
-        { accessor: 'lecturerId', title: 'Lecturer', type: 'text', sortable: false, render: (r) => <span>{cell(r.lecturerId, 'username')}</span> },
+        { accessor: 'lecturerId', title: 'Lecturer', type: 'text', sortable: false, render: (r) => <span>{lecturerLabel(r.lecturerId)}</span> },
         { accessor: 'semesterId', title: 'Semester', type: 'text', sortable: false, render: (r) => <span>{cell(r.semesterId, 'name')}</span> },
         { accessor: 'hallId', title: 'Hall', type: 'text', sortable: false, render: (r) => <span>{hallLabel(r.hallId)}</span> },
         { accessor: 'day', title: 'Day', type: 'text', sortable: true },

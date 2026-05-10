@@ -3,7 +3,9 @@ import React, { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import moment from 'moment';
 import ActionButton from '../../../components/ActionButton';
+import FormDatePicker from '../../../components/form/FormDatePicker';
 import FormInput from '../../../components/form/FormInput';
 import FormSelect from '../../../components/form/FormSelect';
 import { ENTITY_STATUS_OPTIONS } from '../../../constants/entityStatus';
@@ -86,8 +88,36 @@ const SemesterForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     <FormSelect id="s-ay" label="Academic year" value={value} onChange={onChange} onBlur={onBlur} options={ayOptions} error={errors.academicYearId?.message} disabled={isSubmitting} />
                 )}
             />
-            <Controller name="startDate" control={control} render={({ field }) => <FormInput id="s-start" type="date" label="Start" error={errors.startDate?.message} disabled={isSubmitting} {...field} />} />
-            <Controller name="endDate" control={control} render={({ field }) => <FormInput id="s-end" type="date" label="End" error={errors.endDate?.message} disabled={isSubmitting} {...field} />} />
+            <Controller
+                name="startDate"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormDatePicker
+                        id="s-start"
+                        label="Start"
+                        value={value}
+                        onChange={(dates) => onChange(dates[0] ? moment(dates[0]).format('YYYY-MM-DD') : '')}
+                        onBlur={onBlur}
+                        error={errors.startDate?.message}
+                        disabled={isSubmitting}
+                    />
+                )}
+            />
+            <Controller
+                name="endDate"
+                control={control}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormDatePicker
+                        id="s-end"
+                        label="End"
+                        value={value}
+                        onChange={(dates) => onChange(dates[0] ? moment(dates[0]).format('YYYY-MM-DD') : '')}
+                        onBlur={onBlur}
+                        error={errors.endDate?.message}
+                        disabled={isSubmitting}
+                    />
+                )}
+            />
             <Controller
                 name="status"
                 control={control}

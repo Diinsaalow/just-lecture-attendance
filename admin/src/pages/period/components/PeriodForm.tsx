@@ -63,17 +63,19 @@ function departmentIdOfCourse(c: ICourse): string {
 
 function campusIdOfClass(c: ILectureClass): string {
     const x = c.campusId;
-    return typeof x === 'string' ? x : x._id;
+    if (!x) return '';
+    return typeof x === 'string' ? x : x._id || '';
 }
 
 function campusIdOfHall(h: IHall): string {
     const x = h.campusId;
-    return typeof x === 'string' ? x : x._id;
+    if (!x) return '';
+    return typeof x === 'string' ? x : x._id || '';
 }
 
 function hallIdOfPeriod(p: IPeriod): string {
     if (!p.hallId) return '';
-    return typeof p.hallId === 'string' ? p.hallId : p.hallId._id;
+    return typeof p.hallId === 'string' ? p.hallId : p.hallId._id || '';
 }
 
 const schema = z.object({
@@ -148,9 +150,8 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const classCampusId = selectedClass ? campusIdOfClass(selectedClass) : '';
 
     const hallOpts = useMemo(() => {
-        if (!classCampusId) return [];
         return (hallRes?.docs ?? [])
-            .filter((h) => campusIdOfHall(h) === classCampusId)
+            .filter((h) => !classCampusId || campusIdOfHall(h) === classCampusId)
             .map((h) => {
                 const code = h.code ? ` (${h.code})` : '';
                 return { value: h._id, label: `${h.name}${code}` };
@@ -176,8 +177,14 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
 
     useEffect(() => {
         if (itemToEdit) {
-            const classId = typeof itemToEdit.classId === 'string' ? itemToEdit.classId : itemToEdit.classId._id;
-            const courseIdVal = typeof itemToEdit.courseId === 'string' ? itemToEdit.courseId : itemToEdit.courseId._id;
+            const extractId = (val: any) => {
+                if (!val) return '';
+                if (typeof val === 'string') return val;
+                return val._id || '';
+            };
+
+            const classId = extractId(itemToEdit.classId);
+            const courseIdVal = extractId(itemToEdit.courseId);
             const cls = lcRes?.docs?.find((c) => c._id === classId);
             const crs = coRes?.docs?.find((c) => c._id === courseIdVal);
             const resolvedDept = cls ? departmentIdOfClass(cls) : crs ? departmentIdOfCourse(crs) : '';
@@ -185,12 +192,12 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                 departmentId: resolvedDept,
                 classId,
                 courseId: courseIdVal,
-                lecturerId: typeof itemToEdit.lecturerId === 'string' ? itemToEdit.lecturerId : itemToEdit.lecturerId._id,
-                semesterId: typeof itemToEdit.semesterId === 'string' ? itemToEdit.semesterId : itemToEdit.semesterId._id,
-                day: normalizeWeekday(itemToEdit.day),
+                lecturerId: extractId(itemToEdit.lecturerId),
+                semesterId: extractId(itemToEdit.semesterId),
+                day: itemToEdit.day ? normalizeWeekday(itemToEdit.day) : '',
                 type: itemToEdit.type,
-                from: normalizeTimeHHmm(itemToEdit.from),
-                to: normalizeTimeHHmm(itemToEdit.to),
+                from: itemToEdit.from ? normalizeTimeHHmm(itemToEdit.from) : '',
+                to: itemToEdit.to ? normalizeTimeHHmm(itemToEdit.to) : '',
                 hallId: hallIdOfPeriod(itemToEdit),
                 status: itemToEdit.status,
             });

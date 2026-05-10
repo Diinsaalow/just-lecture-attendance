@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { HorizontalMenu, LanguageSwitcher, Logo, QuickLinks, ThemeSwitcher, UserDropdown } from '../header';
+import { HorizontalMenu, LanguageSwitcher, Logo, MessagesDropdown, QuickLinks, ThemeSwitcher, UserDropdown } from '../header';
 import { useModal } from '../../contexts/ModalContext';
 import { IRootState } from '../../store';
 
@@ -39,13 +39,13 @@ const Header = () => {
             <div className="shadow-sm dark:shadow-gray-900/50">
                 <div className="relative bg-white dark:bg-gray-800 flex w-full items-center px-5 py-2.5 border-b border-gray-200 dark:border-gray-600">
                     <Logo />
-                    <QuickLinks onOpenModal={openModal} />
+                    {/* <QuickLinks onOpenModal={openModal} /> */}
 
-                    <div className="sm:flex-1 ltr:sm:ml-0 ltr:ml-auto sm:rtl:mr-0 rtl:mr-auto flex items-center space-x-1.5 lg:space-x-2 rtl:space-x-reverse dark:text-gray-200">
+                    <div className="sm:flex-1 ltr:sm:ml-0 ltr:ml-auto sm:rtl:mr-0 rtl:mr-auto flex justify-end items-center space-x-1.5 lg:space-x-2 rtl:space-x-reverse dark:text-gray-200">
                         <ThemeSwitcher />
                         <LanguageSwitcher />
-                        {/* <MessagesDropdown isRtl={isRtl} /> */}
-                        {/* <NotificationsDropdown isRtl={isRtl} /> */}
+                         {/* <MessagesDropdown isRtl={isRtl} />  */}
+                         {/* <NotificationsDropdown isRtl={isRtl} />  */}
                         <UserDropdown isRtl={isRtl} />
                     </div>
                 </div>

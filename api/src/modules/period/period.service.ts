@@ -76,7 +76,7 @@ export class PeriodService {
       populate: [
         { path: 'classId', select: 'name' },
         { path: 'courseId', select: 'name' },
-        { path: 'lecturerId', select: 'username' },
+        { path: 'lecturerId', select: 'username firstName lastName' },
         { path: 'semesterId', select: 'name' },
         { path: 'hallId', select: 'name code' },
       ],
@@ -114,7 +114,7 @@ export class PeriodService {
       .populate([
         { path: 'classId', select: 'name' },
         { path: 'courseId', select: 'name' },
-        { path: 'lecturerId', select: 'username' },
+        { path: 'lecturerId', select: 'username firstName lastName' },
         { path: 'semesterId', select: 'name' },
         { path: 'hallId', select: 'name code' },
       ])

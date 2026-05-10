@@ -3,7 +3,9 @@ import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import moment from 'moment';
 import ActionButton from '../../../components/ActionButton';
+import FormDatePicker from '../../../components/form/FormDatePicker';
 import FormInput from '../../../components/form/FormInput';
 import FormSelect from '../../../components/form/FormSelect';
 import { ENTITY_STATUS_OPTIONS } from '../../../constants/entityStatus';
@@ -96,14 +98,32 @@ const AcademicYearForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
             <Controller
                 name="startDate"
                 control={control}
-                render={({ field }) => (
-                    <FormInput id="ay-start" type="date" label="Start date" error={errors.startDate?.message} disabled={isSubmitting} {...field} />
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormDatePicker
+                        id="ay-start"
+                        label="Start date"
+                        value={value}
+                        onChange={(dates) => onChange(dates[0] ? moment(dates[0]).format('YYYY-MM-DD') : '')}
+                        onBlur={onBlur}
+                        error={errors.startDate?.message}
+                        disabled={isSubmitting}
+                    />
                 )}
             />
             <Controller
                 name="endDate"
                 control={control}
-                render={({ field }) => <FormInput id="ay-end" type="date" label="End date" error={errors.endDate?.message} disabled={isSubmitting} {...field} />}
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormDatePicker
+                        id="ay-end"
+                        label="End date"
+                        value={value}
+                        onChange={(dates) => onChange(dates[0] ? moment(dates[0]).format('YYYY-MM-DD') : '')}
+                        onBlur={onBlur}
+                        error={errors.endDate?.message}
+                        disabled={isSubmitting}
+                    />
+                )}
             />
             <Controller
                 name="status"

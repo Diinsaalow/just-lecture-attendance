@@ -1,5 +1,5 @@
 import React from 'react';
-import GenericModal from '../../../../components/GenericModal';
+import GenericSidebar from '../../../../components/GenericSidebar';
 import RoleForm from './RoleForm';
 import { IRole } from '../../../../types';
 
@@ -10,12 +10,16 @@ interface RoleModalProps {
 }
 
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, setIsOpen, roleToEdit }) => {
-    const isEditMode = Boolean(roleToEdit);
-
     return (
-        <GenericModal isOpen={isOpen} setIsOpen={setIsOpen} title={isEditMode ? 'Edit Role' : 'New Role'}>
+        <GenericSidebar
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            title={roleToEdit ? 'Edit Role' : 'New Role'}
+            width="min(100vw, 36rem)"
+            closeButtonPosition="top-right"
+        >
             <RoleForm roleToEdit={roleToEdit} onClose={() => setIsOpen(false)} />
-        </GenericModal>
+        </GenericSidebar>
     );
 };
 
