@@ -1,5 +1,5 @@
 import React from 'react';
-import GenericModal from '../../../components/GenericModal';
+import GenericSidebar from '../../../components/GenericSidebar';
 import type { ILectureClass } from '../../../types/lectureClass';
 import LectureClassForm from './LectureClassForm';
 
@@ -10,9 +10,15 @@ interface Props {
 }
 
 const LectureClassModal: React.FC<Props> = ({ isOpen, setIsOpen, itemToEdit }) => (
-    <GenericModal isOpen={isOpen} setIsOpen={setIsOpen} title={itemToEdit ? 'Edit Class' : 'New Class'} maxWidth="2xl">
+    <GenericSidebar
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title={itemToEdit ? 'Edit Class' : 'New Class'}
+        width="min(100vw, 42rem)"
+        closeButtonPosition="top-right"
+    >
         <LectureClassForm itemToEdit={itemToEdit} onClose={() => setIsOpen(false)} />
-    </GenericModal>
+    </GenericSidebar>
 );
 
 export default LectureClassModal;
