@@ -12,19 +12,20 @@ import {
 } from 'class-validator';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
 
+import { CourseType } from '../enums/course-type.enum';
+
 export class CreateCourseDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(300)
   name: string;
 
+  @IsOptional()
   @IsMongoId()
-  departmentId: string;
+  departmentId?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  type: string;
+  @IsEnum(CourseType)
+  type: CourseType;
 
   @IsNumber()
   @Min(0)

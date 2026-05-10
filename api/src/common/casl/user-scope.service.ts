@@ -170,9 +170,12 @@ export class UserScopeService {
       const deptIds = await this.departmentModel
         .find({ facultyId: new Types.ObjectId(user.facultyId) })
         .distinct('_id');
-      return deptIds.length
-        ? { departmentId: { $in: deptIds } }
-        : emptyMatch;
+      return {
+        $or: [
+          { departmentId: { $in: deptIds } },
+          { departmentId: null },
+        ],
+      };
     }
     if (this.isInstructor(user)) {
       const uid = new Types.ObjectId(user.id);

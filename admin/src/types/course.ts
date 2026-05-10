@@ -5,8 +5,8 @@ import type { IDepartment } from './department';
 export interface ICourse {
     _id: string;
     name: string;
-    departmentId: string | Pick<IDepartment, '_id' | 'name'>;
-    type: string;
+    departmentId?: string | Pick<IDepartment, '_id' | 'name'> | null;
+    type: 'CORE' | 'GENERAL';
     credit: number;
     lecturers?: (string | Pick<IUser, '_id' | 'username' | 'email' | 'firstName' | 'lastName'>)[];
     status: EntityStatus;

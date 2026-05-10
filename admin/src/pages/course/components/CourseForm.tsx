@@ -5,36 +5,23 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import ActionButton from '../../../components/ActionButton';
 import FormInput from '../../../components/form/FormInput';
-import FormMultiSelect from '../../../components/form/FormMultiSelect';
 import FormSelect from '../../../components/form/FormSelect';
 import { ENTITY_STATUS_OPTIONS } from '../../../constants/entityStatus';
 import { useCreateCourseMutation, useUpdateCourseMutation } from '../../../store/api/courseApi';
 import { useGetAllDepartmentsQuery } from '../../../store/api/departmentApi';
-import { useGetAllUsersQuery } from '../../../store/api/userApi';
 import type { ICourse } from '../../../types/course';
-import type { IUser } from '../../../types/auth';
 
 const schema = z.object({
     name: z.string().min(1, 'Name is required'),
-    departmentId: z.string().min(1, 'Department is required'),
-    type: z.string().min(1, 'Type is required'),
+    departmentId: z.string().optional(),
+    type: z.enum(['CORE', 'GENERAL'], { required_error: 'Type is required' }),
     credit: z.coerce.number().min(0, 'Must be ≥ 0'),
-    lecturers: z.array(z.string()).optional(),
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-function userRoleName(u: IUser): string {
-    const r = u.role;
-    if (typeof r === 'string') return r.toLowerCase();
-    return ((r as { name?: string })?.name ?? '').toLowerCase();
-}
 
-function lecturerIdsFromCourse(c: ICourse): string[] {
-    if (!c.lecturers?.length) return [];
-    return c.lecturers.map((x) => (typeof x === 'string' ? x : String((x as IUser)._id)));
-}
 
 interface Props {
     itemToEdit?: ICourse | null;
@@ -44,32 +31,18 @@ interface Props {
 const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const isEdit = Boolean(itemToEdit);
     const { data: depRes } = useGetAllDepartmentsQuery({ query: {}, options: { limit: 500, page: 1 } });
-    const { data: usersRes } = useGetAllUsersQuery({ query: {}, options: { limit: 500, page: 1 } });
 
-    const depOpts = useMemo(() => (depRes?.docs ?? []).map((d) => ({ value: d._id, label: d.name })), [depRes]);
+    const courseTypeOpts = [
+        { value: 'CORE', label: 'Core' },
+        { value: 'GENERAL', label: 'General' },
+    ];
 
-    const labelUser = (u: IUser) =>
-        [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || u.email || u._id;
+    const depOpts = useMemo(() => {
+        const opts = (depRes?.docs ?? []).map((d) => ({ value: d._id, label: d.name }));
+        return [{ value: '', label: 'General (No Department)' }, ...opts];
+    }, [depRes]);
 
-    const instructorOpts = useMemo(() => {
-        const docs = usersRes?.docs ?? [];
-        const allOpts = docs.map((u) => ({ value: u._id, label: labelUser(u) }));
-        const instructorDocs = docs.filter((u) => userRoleName(u) === 'instructor');
-        let opts = instructorDocs.length > 0 ? allOpts.filter((o) => instructorDocs.some((u) => u._id === o.value)) : allOpts;
 
-        if (itemToEdit?.lecturers?.length) {
-            const selected = lecturerIdsFromCourse(itemToEdit);
-            const have = new Set(opts.map((o) => o.value));
-            for (const id of selected) {
-                if (!have.has(id)) {
-                    const u = docs.find((d) => d._id === id);
-                    opts = [...opts, { value: id, label: u ? labelUser(u) : id }];
-                    have.add(id);
-                }
-            }
-        }
-        return opts;
-    }, [usersRes, itemToEdit]);
 
     const {
         control,
@@ -81,9 +54,8 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         defaultValues: {
             name: '',
             departmentId: '',
-            type: '',
+            type: 'CORE',
             credit: 0,
-            lecturers: [],
             status: 'ACTIVE',
         },
     });
@@ -95,11 +67,13 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
         if (itemToEdit) {
             reset({
                 name: itemToEdit.name,
-                departmentId:
-                    typeof itemToEdit.departmentId === 'string' ? itemToEdit.departmentId : itemToEdit.departmentId._id,
+                departmentId: !itemToEdit.departmentId
+                    ? ''
+                    : typeof itemToEdit.departmentId === 'string'
+                        ? itemToEdit.departmentId
+                        : itemToEdit.departmentId._id,
                 type: itemToEdit.type,
                 credit: itemToEdit.credit,
-                lecturers: lecturerIdsFromCourse(itemToEdit),
                 status: itemToEdit.status,
             });
         }
@@ -108,10 +82,9 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
     const onSubmit = async (data: FormData) => {
         const payload = {
             name: data.name,
-            departmentId: data.departmentId,
+            departmentId: data.departmentId || null,
             type: data.type,
             credit: data.credit,
-            lecturers: data.lecturers ?? [],
             status: data.status,
         };
         try {
@@ -151,8 +124,18 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
             <Controller
                 name="type"
                 control={control}
-                render={({ field }) => (
-                    <FormInput id="c-type" label="Type" error={errors.type?.message} disabled={isSubmitting} {...field} placeholder="e.g. Core, Elective" />
+                render={({ field: { value, onChange, onBlur } }) => (
+                    <FormSelect
+                        id="c-type"
+                        label="Type"
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        options={courseTypeOpts}
+                        error={errors.type?.message}
+                        disabled={isSubmitting}
+                        placeholder="Select type..."
+                    />
                 )}
             />
             <Controller
@@ -171,23 +154,7 @@ const CourseForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
                     />
                 )}
             />
-            <Controller
-                name="lecturers"
-                control={control}
-                render={({ field: { value, onChange } }) => (
-                    <FormMultiSelect
-                        id="c-instructors"
-                        label="Instructors"
-                        options={instructorOpts}
-                        value={value ?? []}
-                        onChange={onChange}
-                        disabled={isSubmitting}
-                        placeholder="Select instructors..."
-                        searchable
-                        searchPlaceholder="Search by name or username..."
-                    />
-                )}
-            />
+
             <Controller
                 name="status"
                 control={control}

@@ -4,6 +4,8 @@ import { EntityStatus } from '../../../common/enums/entity-status.enum';
 import { Department } from '../../department/schemas/department.schema';
 import { User } from '../../users/schemas/user.schema';
 
+import { CourseType } from '../enums/course-type.enum';
+
 export type CourseDocument = HydratedDocument<Course>;
 
 @Schema({ timestamps: true })
@@ -11,11 +13,11 @@ export class Course {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name, required: true })
-  departmentId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: Department.name, required: false })
+  departmentId?: Types.ObjectId;
 
-  @Prop({ required: true, trim: true })
-  type: string;
+  @Prop({ type: String, enum: CourseType, required: true })
+  type: CourseType;
 
   @Prop({ required: true })
   credit: number;

@@ -30,13 +30,15 @@ export class CourseService {
     createdByUserId: string,
     user: AuthUserPayload,
   ): Promise<Course> {
-    await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
-    await this.departmentService.ensureExists(dto.departmentId);
+    if (dto.departmentId) {
+      await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
+      await this.departmentService.ensureExists(dto.departmentId);
+    }
     const lecturerIds = await this.normalizeLecturerIds(dto.lecturers);
 
     return this.courseModel.create({
       name: dto.name,
-      departmentId: new Types.ObjectId(dto.departmentId),
+      departmentId: dto.departmentId ? new Types.ObjectId(dto.departmentId) : null,
       type: dto.type,
       credit: dto.credit,
       lecturers: lecturerIds,
@@ -130,9 +132,11 @@ export class CourseService {
         id,
         {
           ...dto,
-          ...(dto.departmentId && {
-            departmentId: new Types.ObjectId(dto.departmentId),
-          }),
+          departmentId: dto.departmentId
+            ? new Types.ObjectId(dto.departmentId)
+            : dto.departmentId === null
+              ? null
+              : undefined,
           ...(lecturerIds !== undefined && { lecturers: lecturerIds }),
         },
         { new: true },
