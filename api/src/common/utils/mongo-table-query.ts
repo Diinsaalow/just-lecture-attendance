@@ -6,9 +6,7 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function normalizeFields(
-  fields?: string[] | Record<string, string>,
-): string[] {
+function normalizeFields(fields?: string[] | Record<string, string>): string[] {
   if (!fields) {
     return [];
   }
@@ -58,7 +56,7 @@ export async function paginateFind<TDoc>(
   }
 
   const keyword = q.search?.keyword?.trim();
-  const requestedFields = normalizeFields(q.search?.fields as string[]);
+  const requestedFields = normalizeFields(q.search?.fields);
   const searchOn =
     requestedFields.length > 0
       ? requestedFields.filter((f) => opts.searchFields.includes(f))
@@ -126,7 +124,7 @@ export async function paginateFind<TDoc>(
   const totalPages = Math.max(1, Math.ceil(totalDocs / limit));
 
   return {
-    docs: docs as TDoc[],
+    docs: docs,
     totalDocs,
     limit,
     totalPages,

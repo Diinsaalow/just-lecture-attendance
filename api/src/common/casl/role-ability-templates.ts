@@ -3,18 +3,13 @@ import { Subject } from './constants/subjects';
 import type { AbilityRule } from './types/ability.types';
 
 /** Known built-in role keys (names stored lowercase in DB). */
-export type NormalizedRole =
-  | 'super-admin'
-  | 'faculty-admin'
-  | 'instructor';
+export type NormalizedRole = 'super-admin' | 'faculty-admin' | 'instructor';
 
 export function normalizeRoleName(name: string): NormalizedRole | string {
   return name.trim().toLowerCase();
 }
 
-export function defaultAbilitiesForRole(
-  normalizedName: string,
-): AbilityRule[] {
+export function defaultAbilitiesForRole(normalizedName: string): AbilityRule[] {
   switch (normalizedName as NormalizedRole) {
     case 'super-admin':
       return [{ action: Action.Manage, subject: Subject.All }];
@@ -48,6 +43,11 @@ const FACULTY_ADMIN_RULES: AbilityRule[] = [
   { action: Action.Update, subject: Subject.User },
   { action: Action.Read, subject: Subject.Role },
   { action: Action.Read, subject: Subject.Settings },
+  { action: Action.Read, subject: Subject.AttendanceRecord },
+  { action: Action.Update, subject: Subject.AttendanceRecord },
+  { action: Action.Manage, subject: Subject.AttendanceSettings },
+  { action: Action.Read, subject: Subject.BoundDevice },
+  { action: Action.Delete, subject: Subject.BoundDevice },
 ];
 
 const INSTRUCTOR_RULES: AbilityRule[] = [
@@ -66,4 +66,8 @@ const INSTRUCTOR_RULES: AbilityRule[] = [
   { action: Action.Update, subject: Subject.Period },
   { action: Action.Read, subject: Subject.ClassSession },
   { action: Action.Update, subject: Subject.ClassSession },
+  { action: Action.Create, subject: Subject.AttendanceRecord },
+  { action: Action.Read, subject: Subject.AttendanceRecord },
+  { action: Action.Create, subject: Subject.BoundDevice },
+  { action: Action.Read, subject: Subject.BoundDevice },
 ];

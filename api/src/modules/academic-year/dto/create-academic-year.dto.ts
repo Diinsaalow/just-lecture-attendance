@@ -1,4 +1,11 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
 
 export class CreateAcademicYearDto {

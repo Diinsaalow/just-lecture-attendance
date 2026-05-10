@@ -71,7 +71,9 @@ export class RolesService implements OnModuleInit {
   async findIdByRoleName(name: UserRole | string): Promise<Types.ObjectId> {
     const role = await this.roleModel.findOne({ name }).select('_id').lean();
     if (!role?._id) {
-      throw new Error(`Role "${name}" not found — run ensureDefaultRoles first`);
+      throw new Error(
+        `Role "${name}" not found — run ensureDefaultRoles first`,
+      );
     }
     return role._id;
   }
@@ -124,10 +126,13 @@ export class RolesService implements OnModuleInit {
       status: dto.status ?? 'active',
       ability,
     });
-    return this.toResponse(created.toObject() as unknown as LeanRole);
+    return this.toResponse(created.toObject());
   }
 
-  async update(id: string, dto: UpdateRoleDto): Promise<Record<string, unknown>> {
+  async update(
+    id: string,
+    dto: UpdateRoleDto,
+  ): Promise<Record<string, unknown>> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('Role not found');
     }
@@ -137,7 +142,10 @@ export class RolesService implements OnModuleInit {
     }
     const existingName = String(existing.name);
     if (PROTECTED_ROLE_NAMES.has(existingName)) {
-      if (dto.name !== undefined && dto.name.trim().toLowerCase() !== existingName) {
+      if (
+        dto.name !== undefined &&
+        dto.name.trim().toLowerCase() !== existingName
+      ) {
         throw new ForbiddenException('System roles cannot be renamed');
       }
     }
@@ -146,7 +154,9 @@ export class RolesService implements OnModuleInit {
     if (dto.name !== undefined) {
       const name = dto.name.trim().toLowerCase();
       if (PROTECTED_ROLE_NAMES.has(name) && name !== existingName) {
-        throw new ConflictException('This role name is reserved for system use');
+        throw new ConflictException(
+          'This role name is reserved for system use',
+        );
       }
       const taken = await this.roleModel.findOne({
         name,
@@ -233,9 +243,7 @@ export class RolesService implements OnModuleInit {
     return { deletedCount: deleted };
   }
 
-  private normalizeAbilityInput(
-    rules?: AbilityRuleDto[] | null,
-  ): Array<{
+  private normalizeAbilityInput(rules?: AbilityRuleDto[] | null): Array<{
     action: string | string[];
     subject: string;
     fields?: string[];
@@ -252,7 +260,9 @@ export class RolesService implements OnModuleInit {
     }> = [];
     for (const r of rules) {
       if (!r.subject?.trim()) {
-        throw new BadRequestException('Each ability rule must include a subject');
+        throw new BadRequestException(
+          'Each ability rule must include a subject',
+        );
       }
       const action = r.action;
       if (
@@ -277,12 +287,10 @@ export class RolesService implements OnModuleInit {
     return out;
   }
 
-  private toResponse(
-    doc: LeanRole | RoleDocument,
-  ): Record<string, unknown> {
+  private toResponse(doc: LeanRole | RoleDocument): Record<string, unknown> {
     const plain: LeanRole =
       typeof (doc as RoleDocument).toObject === 'function'
-        ? (((doc as RoleDocument).toObject() as unknown) as LeanRole)
+        ? ((doc as RoleDocument).toObject() as unknown as LeanRole)
         : { ...(doc as LeanRole) };
     const name = String(plain.name ?? '');
     return {

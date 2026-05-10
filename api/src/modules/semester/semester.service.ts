@@ -65,8 +65,7 @@ export class SemesterService {
       searchFields: ['name', 'status'],
       defaultSort: { startDate: -1 },
       populate: { path: 'academicYearId', select: 'name' },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 

@@ -19,7 +19,8 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 @Injectable()
 export class CourseService {
   constructor(
-    @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
+    @InjectModel(Course.name)
+    private readonly courseModel: Model<CourseDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly departmentService: DepartmentService,
     private readonly userScopeService: UserScopeService,
@@ -31,14 +32,19 @@ export class CourseService {
     user: AuthUserPayload,
   ): Promise<Course> {
     if (dto.departmentId) {
-      await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
+      await this.userScopeService.ensureDepartmentInScope(
+        user,
+        dto.departmentId,
+      );
       await this.departmentService.ensureExists(dto.departmentId);
     }
     const lecturerIds = await this.normalizeLecturerIds(dto.lecturers);
 
     return this.courseModel.create({
       name: dto.name,
-      departmentId: dto.departmentId ? new Types.ObjectId(dto.departmentId) : null,
+      departmentId: dto.departmentId
+        ? new Types.ObjectId(dto.departmentId)
+        : null,
       type: dto.type,
       credit: dto.credit,
       lecturers: lecturerIds,
@@ -56,8 +62,7 @@ export class CourseService {
       searchFields: ['name', 'type', 'status'],
       defaultSort: { createdAt: -1 },
       populate: { path: 'departmentId', select: 'name' },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
@@ -120,7 +125,10 @@ export class CourseService {
   ): Promise<Course> {
     await this.userScopeService.ensureCourseInScope(user, id);
     if (dto.departmentId) {
-      await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
+      await this.userScopeService.ensureDepartmentInScope(
+        user,
+        dto.departmentId,
+      );
       await this.departmentService.ensureExists(dto.departmentId);
     }
     let lecturerIds: Types.ObjectId[] | undefined;

@@ -32,10 +32,7 @@ export class HallController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateHallPolicy)
-  create(
-    @Body() dto: CreateHallDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreateHallDto, @CurrentUser() user: AuthUserPayload) {
     return this.hallService.create(dto, user.id, user);
   }
 

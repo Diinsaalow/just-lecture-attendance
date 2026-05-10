@@ -27,6 +27,18 @@ export class Hall {
   @Prop({ min: 0 })
   capacity?: number;
 
+  /** GPS latitude of the hall centre (for geofence). */
+  @Prop({ type: Number })
+  latitude?: number;
+
+  /** GPS longitude of the hall centre (for geofence). */
+  @Prop({ type: Number })
+  longitude?: number;
+
+  /** Geofence radius in metres around the hall centre. */
+  @Prop({ type: Number })
+  geofenceRadiusMeters?: number;
+
   @Prop({
     type: String,
     enum: EntityStatus,

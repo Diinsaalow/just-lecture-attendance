@@ -22,7 +22,8 @@ import { UpdatePeriodDto } from './dto/update-period.dto';
 @Injectable()
 export class PeriodService {
   constructor(
-    @InjectModel(Period.name) private readonly periodModel: Model<PeriodDocument>,
+    @InjectModel(Period.name)
+    private readonly periodModel: Model<PeriodDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly lectureClassService: LectureClassService,
     private readonly courseService: CourseService,
@@ -57,9 +58,7 @@ export class PeriodService {
       type: dto.type,
       from: dto.from,
       to: dto.to,
-      ...(dto.hallId
-        ? { hallId: new Types.ObjectId(dto.hallId) }
-        : {}),
+      ...(dto.hallId ? { hallId: new Types.ObjectId(dto.hallId) } : {}),
       status: dto.status,
       createdBy: new Types.ObjectId(createdByUserId),
     });
@@ -80,8 +79,7 @@ export class PeriodService {
         { path: 'semesterId', select: 'name' },
         { path: 'hallId', select: 'name code' },
       ],
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
@@ -184,9 +182,7 @@ export class PeriodService {
       patch.semesterId = new Types.ObjectId(dto.semesterId);
     }
     if (dto.hallId !== undefined) {
-      patch.hallId = dto.hallId
-        ? new Types.ObjectId(dto.hallId)
-        : null;
+      patch.hallId = dto.hallId ? new Types.ObjectId(dto.hallId) : null;
     }
 
     const doc = await this.periodModel
@@ -258,8 +254,7 @@ export class PeriodService {
     classId: string,
     courseId: string,
   ): Promise<void> {
-    const lectureClass =
-      await this.lectureClassService.findByIdOrNull(classId);
+    const lectureClass = await this.lectureClassService.findByIdOrNull(classId);
     const course = await this.courseService.findByIdOrNull(courseId);
     if (!lectureClass || !course) {
       throw new BadRequestException('Class or course not found');
@@ -281,8 +276,7 @@ export class PeriodService {
     }
     await this.userScopeService.ensureHallInScope(user, hallId);
     await this.hallService.ensureExists(hallId);
-    const lectureClass =
-      await this.lectureClassService.findByIdOrNull(classId);
+    const lectureClass = await this.lectureClassService.findByIdOrNull(classId);
     if (!lectureClass) {
       throw new BadRequestException('Class not found');
     }

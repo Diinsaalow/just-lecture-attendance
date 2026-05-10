@@ -18,7 +18,8 @@ import { UpdateFacultyDto } from './dto/update-faculty.dto';
 @Injectable()
 export class FacultyService {
   constructor(
-    @InjectModel(Faculty.name) private readonly facultyModel: Model<FacultyDocument>,
+    @InjectModel(Faculty.name)
+    private readonly facultyModel: Model<FacultyDocument>,
     private readonly campusService: CampusService,
     private readonly userScopeService: UserScopeService,
   ) {}
@@ -47,8 +48,7 @@ export class FacultyService {
       searchFields: ['name', 'description', 'code', 'status'],
       defaultSort: { createdAt: -1 },
       populate: { path: 'campusId', select: 'campusName' },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 

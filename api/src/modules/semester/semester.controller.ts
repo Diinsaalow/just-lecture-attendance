@@ -32,10 +32,7 @@ export class SemesterController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateSemesterPolicy)
-  create(
-    @Body() dto: CreateSemesterDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreateSemesterDto, @CurrentUser() user: AuthUserPayload) {
     return this.semesterService.create(dto, user.id);
   }
 

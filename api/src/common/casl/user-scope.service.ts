@@ -1,16 +1,41 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { AuthUserPayload } from '../decorators/current-user.decorator';
 import { normalizeRoleName } from './role-ability-templates';
 import { Hall, HallDocument } from '../../modules/hall/schemas/hall.schema';
-import { Campus, CampusDocument } from '../../modules/campus/schemas/campus.schema';
-import { Faculty, FacultyDocument } from '../../modules/faculty/schemas/faculty.schema';
-import { Department, DepartmentDocument } from '../../modules/department/schemas/department.schema';
-import { LectureClass, LectureClassDocument } from '../../modules/classes/schemas/lecture-class.schema';
-import { Period, PeriodDocument } from '../../modules/period/schemas/period.schema';
-import { Course, CourseDocument } from '../../modules/course/schemas/course.schema';
-import { Semester, SemesterDocument } from '../../modules/semester/schemas/semester.schema';
+import {
+  Campus,
+  CampusDocument,
+} from '../../modules/campus/schemas/campus.schema';
+import {
+  Faculty,
+  FacultyDocument,
+} from '../../modules/faculty/schemas/faculty.schema';
+import {
+  Department,
+  DepartmentDocument,
+} from '../../modules/department/schemas/department.schema';
+import {
+  LectureClass,
+  LectureClassDocument,
+} from '../../modules/classes/schemas/lecture-class.schema';
+import {
+  Period,
+  PeriodDocument,
+} from '../../modules/period/schemas/period.schema';
+import {
+  Course,
+  CourseDocument,
+} from '../../modules/course/schemas/course.schema';
+import {
+  Semester,
+  SemesterDocument,
+} from '../../modules/semester/schemas/semester.schema';
 import { User, UserDocument } from '../../modules/users/schemas/user.schema';
 import {
   ClassSession,
@@ -22,7 +47,8 @@ const emptyMatch = { _id: { $exists: false } };
 @Injectable()
 export class UserScopeService {
   constructor(
-    @InjectModel(Campus.name) private readonly campusModel: Model<CampusDocument>,
+    @InjectModel(Campus.name)
+    private readonly campusModel: Model<CampusDocument>,
     @InjectModel(Hall.name) private readonly hallModel: Model<HallDocument>,
     @InjectModel(Faculty.name)
     private readonly facultyModel: Model<FacultyDocument>,
@@ -105,7 +131,9 @@ export class UserScopeService {
     return emptyMatch;
   }
 
-  async departmentMatch(user: AuthUserPayload): Promise<Record<string, unknown>> {
+  async departmentMatch(
+    user: AuthUserPayload,
+  ): Promise<Record<string, unknown>> {
     if (this.isSuperAdmin(user)) return {};
     if (this.isFacultyAdmin(user) && user.facultyId) {
       return { facultyId: new Types.ObjectId(user.facultyId) };
@@ -153,9 +181,7 @@ export class UserScopeService {
       const deptIds = await this.departmentModel
         .find({ facultyId: new Types.ObjectId(user.facultyId) })
         .distinct('_id');
-      return deptIds.length
-        ? { departmentId: { $in: deptIds } }
-        : emptyMatch;
+      return deptIds.length ? { departmentId: { $in: deptIds } } : emptyMatch;
     }
     if (this.isInstructor(user)) {
       const ids = await this.instructorDepartmentIds(user.id);
@@ -171,10 +197,7 @@ export class UserScopeService {
         .find({ facultyId: new Types.ObjectId(user.facultyId) })
         .distinct('_id');
       return {
-        $or: [
-          { departmentId: { $in: deptIds } },
-          { departmentId: null },
-        ],
+        $or: [{ departmentId: { $in: deptIds } }, { departmentId: null }],
       };
     }
     if (this.isInstructor(user)) {
@@ -195,9 +218,7 @@ export class UserScopeService {
       const classIds = await this.lectureClassModel
         .find({ departmentId: { $in: deptIds } })
         .distinct('_id');
-      return classIds.length
-        ? { classId: { $in: classIds } }
-        : emptyMatch;
+      return classIds.length ? { classId: { $in: classIds } } : emptyMatch;
     }
     if (this.isInstructor(user)) {
       return { lecturerId: new Types.ObjectId(user.id) };
@@ -212,7 +233,22 @@ export class UserScopeService {
     return this.periodMatch(user);
   }
 
-  async academicYearMatch(_user: AuthUserPayload): Promise<Record<string, unknown>> {
+  async attendanceMatch(
+    user: AuthUserPayload,
+  ): Promise<Record<string, unknown>> {
+    if (this.isSuperAdmin(user)) return {};
+    if (this.isFacultyAdmin(user) && user.facultyId) {
+      return { facultyId: new Types.ObjectId(user.facultyId) };
+    }
+    if (this.isInstructor(user)) {
+      return { instructorUserId: new Types.ObjectId(user.id) };
+    }
+    return emptyMatch;
+  }
+
+  async academicYearMatch(
+    _user: AuthUserPayload,
+  ): Promise<Record<string, unknown>> {
     return {};
   }
 
@@ -234,7 +270,9 @@ export class UserScopeService {
     user: AuthUserPayload,
     campusId: string,
   ): Promise<void> {
-    await this.ensureRow(this.campusModel, campusId, () => this.campusMatch(user));
+    await this.ensureRow(this.campusModel, campusId, () =>
+      this.campusMatch(user),
+    );
   }
 
   async ensureHallInScope(
@@ -332,7 +370,7 @@ export class UserScopeService {
     }
     const found = await model
       .findOne({
-        $and: [{ _id: id }, m as Record<string, unknown>],
+        $and: [{ _id: id }, m],
       } as never)
       .exec();
     if (!found) {
@@ -342,9 +380,7 @@ export class UserScopeService {
     }
   }
 
-  private async instructorCampusIds(
-    userId: string,
-  ): Promise<Types.ObjectId[]> {
+  private async instructorCampusIds(userId: string): Promise<Types.ObjectId[]> {
     const classIds = await this.periodModel.distinct('classId', {
       lecturerId: new Types.ObjectId(userId),
     });

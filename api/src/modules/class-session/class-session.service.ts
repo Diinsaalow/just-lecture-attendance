@@ -13,7 +13,10 @@ import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
 import { Period, PeriodDocument } from '../period/schemas/period.schema';
-import { Semester, SemesterDocument } from '../semester/schemas/semester.schema';
+import {
+  Semester,
+  SemesterDocument,
+} from '../semester/schemas/semester.schema';
 import { SemesterService } from '../semester/semester.service';
 import {
   LectureClass,
@@ -42,7 +45,8 @@ export class ClassSessionService {
   constructor(
     @InjectModel(ClassSession.name)
     private readonly classSessionModel: Model<ClassSessionDocument>,
-    @InjectModel(Period.name) private readonly periodModel: Model<PeriodDocument>,
+    @InjectModel(Period.name)
+    private readonly periodModel: Model<PeriodDocument>,
     @InjectModel(LectureClass.name)
     private readonly lectureClassModel: Model<LectureClassDocument>,
     @InjectModel(Department.name)
@@ -63,9 +67,7 @@ export class ClassSessionService {
   ): Promise<Array<{ _id: Types.ObjectId; name: string }>> {
     const periodScope = await this.userScopeService.periodMatch(user);
     const periodFilter: Record<string, unknown> =
-      Object.keys(periodScope).length > 0
-        ? { ...(periodScope as Record<string, unknown>) }
-        : {};
+      Object.keys(periodScope).length > 0 ? { ...periodScope } : {};
     if (classId !== undefined && classId !== '') {
       if (!Types.ObjectId.isValid(classId)) {
         throw new BadRequestException('Invalid classId');
@@ -90,10 +92,7 @@ export class ClassSessionService {
     user: AuthUserPayload,
   ): Promise<Array<{ _id: Types.ObjectId; name: string }>> {
     const periodScope = await this.userScopeService.periodMatch(user);
-    const periodFilter =
-      Object.keys(periodScope).length > 0
-        ? (periodScope as Record<string, unknown>)
-        : {};
+    const periodFilter = Object.keys(periodScope).length > 0 ? periodScope : {};
     const classIds = await this.periodModel.distinct('classId', periodFilter);
     if (!classIds.length) {
       return [];
@@ -238,7 +237,7 @@ export class ClassSessionService {
         status: dto.status ?? ClassSessionStatus.SCHEDULED,
         createdBy: new Types.ObjectId(user.id),
       });
-      return this.populateSession(doc._id as Types.ObjectId);
+      return this.populateSession(doc._id);
     } catch (error) {
       this.throwIfDuplicate(error);
       throw error;
@@ -260,8 +259,7 @@ export class ClassSessionService {
         { path: 'semesterId', select: 'name' },
         { path: 'hallId', select: 'name code' },
       ],
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
@@ -337,7 +335,7 @@ export class ClassSessionService {
     }
 
     if (!Object.keys(patch).length && !Object.keys(unset).length) {
-      return this.populateSession(existing._id as Types.ObjectId);
+      return this.populateSession(existing._id);
     }
 
     try {
@@ -390,7 +388,9 @@ export class ClassSessionService {
       throw new NotFoundException('Period not found');
     }
 
-    const semester = await this.semesterModel.findById(period.semesterId).lean();
+    const semester = await this.semesterModel
+      .findById(period.semesterId)
+      .lean();
     if (!semester) {
       throw new BadRequestException('Period semester was not found');
     }

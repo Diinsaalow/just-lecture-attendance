@@ -62,9 +62,11 @@ export class UsersController {
   @Get('lecturers/next-username')
   @CheckPolicies(ReadUserPolicy)
   previewLecturerUsername() {
-    return this.usersService.generateNextLecturerUsername().then((username) => ({
-      username,
-    }));
+    return this.usersService
+      .generateNextLecturerUsername()
+      .then((username) => ({
+        username,
+      }));
   }
 
   @Get('lecturers')

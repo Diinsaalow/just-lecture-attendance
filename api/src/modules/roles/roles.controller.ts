@@ -10,9 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  CheckPolicies,
-} from '../../common/casl/guards/policies.guard';
+import { CheckPolicies } from '../../common/casl/guards/policies.guard';
 import {
   CreateRolePolicy,
   DeleteRolePolicy,

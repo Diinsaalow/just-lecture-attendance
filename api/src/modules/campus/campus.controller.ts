@@ -32,10 +32,7 @@ export class CampusController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateCampusPolicy)
-  create(
-    @Body() dto: CreateCampusDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreateCampusDto, @CurrentUser() user: AuthUserPayload) {
     return this.campusService.create(dto, user.id);
   }
 

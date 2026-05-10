@@ -31,8 +31,7 @@ export class CaslAbilityFactory {
       ) as Action[];
       const subject = rule.subject;
       for (const raw of actions) {
-        const action =
-          typeof raw === 'string' ? (raw as Action) : raw;
+        const action = typeof raw === 'string' ? raw : raw;
         can(action, subject);
       }
     }

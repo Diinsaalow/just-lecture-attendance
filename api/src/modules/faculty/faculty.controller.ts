@@ -32,10 +32,7 @@ export class FacultyController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateFacultyPolicy)
-  create(
-    @Body() dto: CreateFacultyDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreateFacultyDto, @CurrentUser() user: AuthUserPayload) {
     return this.facultyService.create(dto, user.id);
   }
 

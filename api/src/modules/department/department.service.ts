@@ -11,10 +11,7 @@ import { TableQueryDto } from '../../common/dto/table-query.dto';
 import { PaginatedResult } from '../../common/interfaces/paginated-result.interface';
 import { paginateFind } from '../../common/utils/mongo-table-query';
 import { FacultyService } from '../faculty/faculty.service';
-import {
-  Department,
-  DepartmentDocument,
-} from './schemas/department.schema';
+import { Department, DepartmentDocument } from './schemas/department.schema';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 
@@ -62,8 +59,7 @@ export class DepartmentService {
       ],
       defaultSort: { createdAt: -1 },
       populate: { path: 'facultyId', select: 'name' },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 

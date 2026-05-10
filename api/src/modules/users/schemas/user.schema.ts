@@ -40,6 +40,10 @@ export class User {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  /** Device ID registered for attendance check-in (1 device per instructor). */
+  @Prop({ type: String, trim: true })
+  registeredDeviceId?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

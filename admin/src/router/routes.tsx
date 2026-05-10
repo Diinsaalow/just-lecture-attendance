@@ -23,6 +23,7 @@ import Halls from '../pages/hall';
 
 import Settings from '../pages/settings';
 import SettingsRoles from '../pages/settings/roles';
+import AttendanceSettingsPage from '../pages/settings/attendance';
 
 import SystemDashboard from '../pages/dashboard/SystemDashboard';
 
@@ -213,6 +214,14 @@ export const protectedRoutes: RouteConfig[] = [
                 isPublic: false,
                 resource: 'Role',
                 action: ['read', 'create', 'update', 'delete'],
+            },
+            {
+                path: 'attendance',
+                element: <AttendanceSettingsPage />,
+                layout: 'default',
+                isPublic: false,
+                resource: 'AttendanceSettings',
+                action: ['read', 'manage'],
             },
         ],
     },

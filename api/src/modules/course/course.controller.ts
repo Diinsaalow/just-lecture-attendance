@@ -32,10 +32,7 @@ export class CourseController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateCoursePolicy)
-  create(
-    @Body() dto: CreateCourseDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreateCourseDto, @CurrentUser() user: AuthUserPayload) {
     return this.courseService.create(dto, user.id, user);
   }
 

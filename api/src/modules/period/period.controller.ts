@@ -32,10 +32,7 @@ export class PeriodController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreatePeriodPolicy)
-  create(
-    @Body() dto: CreatePeriodDto,
-    @CurrentUser() user: AuthUserPayload,
-  ) {
+  create(@Body() dto: CreatePeriodDto, @CurrentUser() user: AuthUserPayload) {
     return this.periodService.create(dto, user.id, user);
   }
 

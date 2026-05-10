@@ -51,8 +51,7 @@ export class AcademicYearService {
     return paginateFind<AcademicYearDocument>(this.academicYearModel, q, {
       searchFields: ['name', 'status'],
       defaultSort: { startDate: -1 },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 

@@ -69,8 +69,7 @@ export class LectureClassService {
         { path: 'campusId', select: 'campusName' },
         { path: 'academicYearId', select: 'name' },
       ],
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 
@@ -126,7 +125,10 @@ export class LectureClassService {
   ): Promise<LectureClass> {
     await this.userScopeService.ensureLectureClassInScope(user, id);
     if (dto.departmentId) {
-      await this.userScopeService.ensureDepartmentInScope(user, dto.departmentId);
+      await this.userScopeService.ensureDepartmentInScope(
+        user,
+        dto.departmentId,
+      );
       await this.departmentService.ensureExists(dto.departmentId);
     }
     if (dto.campusId) {

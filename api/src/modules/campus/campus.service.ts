@@ -17,14 +17,12 @@ import { UpdateCampusDto } from './dto/update-campus.dto';
 @Injectable()
 export class CampusService {
   constructor(
-    @InjectModel(Campus.name) private readonly campusModel: Model<CampusDocument>,
+    @InjectModel(Campus.name)
+    private readonly campusModel: Model<CampusDocument>,
     private readonly userScopeService: UserScopeService,
   ) {}
 
-  async create(
-    dto: CreateCampusDto,
-    createdByUserId: string,
-  ): Promise<Campus> {
+  async create(dto: CreateCampusDto, createdByUserId: string): Promise<Campus> {
     return this.campusModel.create({
       ...dto,
       status: dto.status ?? undefined,
@@ -40,8 +38,7 @@ export class CampusService {
     return paginateFind<CampusDocument>(this.campusModel, q, {
       searchFields: ['campusName', 'telephone', 'location', 'status'],
       defaultSort: { createdAt: -1 },
-      baseMatch:
-        Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
+      baseMatch: Object.keys(baseMatch).length > 0 ? baseMatch : undefined,
     });
   }
 

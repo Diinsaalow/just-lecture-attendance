@@ -19,6 +19,9 @@ export const Subject = {
   Settings: 'Settings',
   AttendanceRecord: 'AttendanceRecord',
   AbsenceSubmission: 'AbsenceSubmission',
+  BoundDevice: 'BoundDevice',
+  HallQr: 'HallQr',
+  AttendanceSettings: 'AttendanceSettings',
 } as const;
 
 export type SubjectType = (typeof Subject)[keyof typeof Subject];

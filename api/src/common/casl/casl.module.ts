@@ -4,14 +4,35 @@ import { CaslAbilityFactory } from './casl-ability.factory';
 import { PoliciesGuard } from './guards/policies.guard';
 import { UserScopeService } from './user-scope.service';
 import { Hall, HallSchema } from '../../modules/hall/schemas/hall.schema';
-import { Campus, CampusSchema } from '../../modules/campus/schemas/campus.schema';
-import { Faculty, FacultySchema } from '../../modules/faculty/schemas/faculty.schema';
-import { Department, DepartmentSchema } from '../../modules/department/schemas/department.schema';
-import { LectureClass, LectureClassSchema } from '../../modules/classes/schemas/lecture-class.schema';
-import { Period, PeriodSchema } from '../../modules/period/schemas/period.schema';
-import { Course, CourseSchema } from '../../modules/course/schemas/course.schema';
+import {
+  Campus,
+  CampusSchema,
+} from '../../modules/campus/schemas/campus.schema';
+import {
+  Faculty,
+  FacultySchema,
+} from '../../modules/faculty/schemas/faculty.schema';
+import {
+  Department,
+  DepartmentSchema,
+} from '../../modules/department/schemas/department.schema';
+import {
+  LectureClass,
+  LectureClassSchema,
+} from '../../modules/classes/schemas/lecture-class.schema';
+import {
+  Period,
+  PeriodSchema,
+} from '../../modules/period/schemas/period.schema';
+import {
+  Course,
+  CourseSchema,
+} from '../../modules/course/schemas/course.schema';
 import { User, UserSchema } from '../../modules/users/schemas/user.schema';
-import { Semester, SemesterSchema } from '../../modules/semester/schemas/semester.schema';
+import {
+  Semester,
+  SemesterSchema,
+} from '../../modules/semester/schemas/semester.schema';
 import {
   ClassSession,
   ClassSessionSchema,

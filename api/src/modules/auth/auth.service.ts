@@ -72,7 +72,9 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto): Promise<{ accessToken: string; user: AuthPublicUser }> {
+  async login(
+    dto: LoginDto,
+  ): Promise<{ accessToken: string; user: AuthPublicUser }> {
     const user = await this.usersService.findByUsernameWithHash(dto.username);
     if (!user?.isActive) {
       throw new UnauthorizedException('Invalid credentials');

@@ -8,10 +8,12 @@ import { Model } from 'mongoose';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
-  
+
   const semesterModel = app.get<Model<Semester>>(getModelToken(Semester.name));
   const periodModel = app.get<Model<Period>>(getModelToken(Period.name));
-  const classModel = app.get<Model<LectureClass>>(getModelToken(LectureClass.name));
+  const classModel = app.get<Model<LectureClass>>(
+    getModelToken(LectureClass.name),
+  );
 
   const semesterCount = await semesterModel.countDocuments();
   const classCount = await classModel.countDocuments();

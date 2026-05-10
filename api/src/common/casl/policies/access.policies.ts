@@ -8,7 +8,10 @@ export const ReadDashboardPolicy = createPolicyHandler(
   Action.Read,
   Subject.Dashboard,
 );
-export const ReadReportPolicy = createPolicyHandler(Action.Read, Subject.Report);
+export const ReadReportPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.Report,
+);
 
 export const CreateAcademicYearPolicy = createPolicyHandler(
   Action.Create,
@@ -31,7 +34,10 @@ export const CreateCampusPolicy = createPolicyHandler(
   Action.Create,
   Subject.Campus,
 );
-export const ReadCampusPolicy = createPolicyHandler(Action.Read, Subject.Campus);
+export const ReadCampusPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.Campus,
+);
 export const UpdateCampusPolicy = createPolicyHandler(
   Action.Update,
   Subject.Campus,
@@ -41,16 +47,28 @@ export const DeleteCampusPolicy = createPolicyHandler(
   Subject.Campus,
 );
 
-export const CreateHallPolicy = createPolicyHandler(Action.Create, Subject.Hall);
+export const CreateHallPolicy = createPolicyHandler(
+  Action.Create,
+  Subject.Hall,
+);
 export const ReadHallPolicy = createPolicyHandler(Action.Read, Subject.Hall);
-export const UpdateHallPolicy = createPolicyHandler(Action.Update, Subject.Hall);
-export const DeleteHallPolicy = createPolicyHandler(Action.Delete, Subject.Hall);
+export const UpdateHallPolicy = createPolicyHandler(
+  Action.Update,
+  Subject.Hall,
+);
+export const DeleteHallPolicy = createPolicyHandler(
+  Action.Delete,
+  Subject.Hall,
+);
 
 export const CreateFacultyPolicy = createPolicyHandler(
   Action.Create,
   Subject.Faculty,
 );
-export const ReadFacultyPolicy = createPolicyHandler(Action.Read, Subject.Faculty);
+export const ReadFacultyPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.Faculty,
+);
 export const UpdateFacultyPolicy = createPolicyHandler(
   Action.Update,
   Subject.Faculty,
@@ -115,7 +133,10 @@ export const CreateCoursePolicy = createPolicyHandler(
   Action.Create,
   Subject.Course,
 );
-export const ReadCoursePolicy = createPolicyHandler(Action.Read, Subject.Course);
+export const ReadCoursePolicy = createPolicyHandler(
+  Action.Read,
+  Subject.Course,
+);
 export const UpdateCoursePolicy = createPolicyHandler(
   Action.Update,
   Subject.Course,
@@ -129,7 +150,10 @@ export const CreatePeriodPolicy = createPolicyHandler(
   Action.Create,
   Subject.Period,
 );
-export const ReadPeriodPolicy = createPolicyHandler(Action.Read, Subject.Period);
+export const ReadPeriodPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.Period,
+);
 export const UpdatePeriodPolicy = createPolicyHandler(
   Action.Update,
   Subject.Period,
@@ -156,10 +180,19 @@ export const DeleteClassSessionPolicy = createPolicyHandler(
   Subject.ClassSession,
 );
 
-export const CreateUserPolicy = createPolicyHandler(Action.Create, Subject.User);
+export const CreateUserPolicy = createPolicyHandler(
+  Action.Create,
+  Subject.User,
+);
 export const ReadUserPolicy = createPolicyHandler(Action.Read, Subject.User);
-export const UpdateUserPolicy = createPolicyHandler(Action.Update, Subject.User);
-export const DeleteUserPolicy = createPolicyHandler(Action.Delete, Subject.User);
+export const UpdateUserPolicy = createPolicyHandler(
+  Action.Update,
+  Subject.User,
+);
+export const DeleteUserPolicy = createPolicyHandler(
+  Action.Delete,
+  Subject.User,
+);
 
 export const ReadRolePolicy = createPolicyHandler(Action.Read, Subject.Role);
 
@@ -179,4 +212,42 @@ export const DeleteRolePolicy = createPolicyHandler(
 export const ManageSettingsPolicy = createPolicyHandler(
   Action.Manage,
   Subject.Settings,
+);
+
+// Attendance Record
+export const CreateAttendanceRecordPolicy = createPolicyHandler(
+  Action.Create,
+  Subject.AttendanceRecord,
+);
+export const ReadAttendanceRecordPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.AttendanceRecord,
+);
+export const UpdateAttendanceRecordPolicy = createPolicyHandler(
+  Action.Update,
+  Subject.AttendanceRecord,
+);
+
+// Bound Device
+export const CreateBoundDevicePolicy = createPolicyHandler(
+  Action.Create,
+  Subject.BoundDevice,
+);
+export const ReadBoundDevicePolicy = createPolicyHandler(
+  Action.Read,
+  Subject.BoundDevice,
+);
+export const DeleteBoundDevicePolicy = createPolicyHandler(
+  Action.Delete,
+  Subject.BoundDevice,
+);
+
+// Attendance Settings
+export const ReadAttendanceSettingsPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.AttendanceSettings,
+);
+export const ManageAttendanceSettingsPolicy = createPolicyHandler(
+  Action.Manage,
+  Subject.AttendanceSettings,
 );

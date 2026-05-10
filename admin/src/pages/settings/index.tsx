@@ -1,4 +1,4 @@
-import { Shield } from 'lucide-react';
+import { Shield, Clock } from 'lucide-react';
 import React from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -11,6 +11,12 @@ const settingsItems = [
         title: 'Roles & Permissions',
         icon: <Shield className="w-5 h-5" />,
         path: '/settings/roles',
+    },
+    {
+        id: 'attendance',
+        title: 'Attendance Rules',
+        icon: <Clock className="w-5 h-5" />,
+        path: '/settings/attendance',
     },
 ];
 
