@@ -189,7 +189,6 @@ const UsersPage = () => {
                 searchFields={['firstName', 'lastName', 'email', 'username']}
                 sortCol="createdAt"
                 variant="staff"
-                populate={[{ path: 'role', select: 'name' }]}
                 rowSelectionEnabled={true}
                 onSelectionChange={setSelectedRecords}
                 searchable={true}

@@ -251,3 +251,23 @@ export const ManageAttendanceSettingsPolicy = createPolicyHandler(
   Action.Manage,
   Subject.AttendanceSettings,
 );
+
+// Absence / Late / Early Leave Submission
+export const CreateAbsenceSubmissionPolicy = createPolicyHandler(
+  Action.Create,
+  Subject.AbsenceSubmission,
+);
+export const ReadAbsenceSubmissionPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.AbsenceSubmission,
+);
+export const UpdateAbsenceSubmissionPolicy = createPolicyHandler(
+  Action.Update,
+  Subject.AbsenceSubmission,
+);
+
+// Audit Log
+export const ReadAuditLogPolicy = createPolicyHandler(
+  Action.Read,
+  Subject.AuditLog,
+);

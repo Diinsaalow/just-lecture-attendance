@@ -14,6 +14,7 @@ import { DeviceModule } from '../device/device.module';
 import { CaslModule } from '../../common/casl/casl.module';
 import { AttendanceValidationService } from './attendance-validation.service';
 import { AttendanceService } from './attendance.service';
+import { AttendanceAutomationService } from './attendance-automation.service';
 import { AttendanceController } from './attendance.controller';
 
 @Module({
@@ -28,7 +29,11 @@ import { AttendanceController } from './attendance.controller';
     CaslModule,
   ],
   controllers: [AttendanceController],
-  providers: [AttendanceValidationService, AttendanceService],
-  exports: [AttendanceService],
+  providers: [
+    AttendanceValidationService,
+    AttendanceService,
+    AttendanceAutomationService,
+  ],
+  exports: [AttendanceService, AttendanceAutomationService],
 })
 export class AttendanceModule {}

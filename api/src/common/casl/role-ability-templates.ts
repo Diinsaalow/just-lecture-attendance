@@ -41,6 +41,7 @@ const FACULTY_ADMIN_RULES: AbilityRule[] = [
   { action: Action.Read, subject: Subject.User },
   { action: Action.Create, subject: Subject.User },
   { action: Action.Update, subject: Subject.User },
+  { action: Action.Delete, subject: Subject.User },
   { action: Action.Read, subject: Subject.Role },
   { action: Action.Read, subject: Subject.Settings },
   { action: Action.Read, subject: Subject.AttendanceRecord },
@@ -48,6 +49,9 @@ const FACULTY_ADMIN_RULES: AbilityRule[] = [
   { action: Action.Manage, subject: Subject.AttendanceSettings },
   { action: Action.Read, subject: Subject.BoundDevice },
   { action: Action.Delete, subject: Subject.BoundDevice },
+  { action: Action.Read, subject: Subject.AbsenceSubmission },
+  { action: Action.Update, subject: Subject.AbsenceSubmission },
+  { action: Action.Read, subject: Subject.AuditLog },
 ];
 
 const INSTRUCTOR_RULES: AbilityRule[] = [
@@ -63,11 +67,11 @@ const INSTRUCTOR_RULES: AbilityRule[] = [
   { action: Action.Read, subject: Subject.LectureClass },
   { action: Action.Read, subject: Subject.Course },
   { action: Action.Read, subject: Subject.Period },
-  { action: Action.Update, subject: Subject.Period },
   { action: Action.Read, subject: Subject.ClassSession },
-  { action: Action.Update, subject: Subject.ClassSession },
   { action: Action.Create, subject: Subject.AttendanceRecord },
   { action: Action.Read, subject: Subject.AttendanceRecord },
   { action: Action.Create, subject: Subject.BoundDevice },
   { action: Action.Read, subject: Subject.BoundDevice },
+  { action: Action.Create, subject: Subject.AbsenceSubmission },
+  { action: Action.Read, subject: Subject.AbsenceSubmission },
 ];

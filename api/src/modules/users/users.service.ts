@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -20,6 +21,11 @@ import { CreateLecturerDto } from './dto/create-lecturer.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateLecturerDto } from './dto/update-lecturer.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import {
+  AuditAction,
+  AuditEntity,
+} from '../audit-log/enums/audit-action.enum';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -42,17 +48,53 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly userScopeService: UserScopeService,
     private readonly rolesService: RolesService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
-  async create(dto: CreateUserDto): Promise<UserDocument> {
+  async create(
+    dto: CreateUserDto,
+    actor: AuthUserPayload,
+  ): Promise<UserDocument> {
     const username = dto.email.trim().toLowerCase();
     const exists = await this.userModel.exists({ username });
     if (exists) {
       throw new ConflictException('User with this email already exists');
     }
+
+    const roleName = await this.rolesService.findRoleNameById(
+      new Types.ObjectId(dto.role),
+    );
+    if (!roleName) {
+      throw new BadRequestException('Selected role does not exist');
+    }
+    const targetRole = normalizeRoleName(roleName);
+
+    let facultyId: Types.ObjectId | undefined;
+    if (this.userScopeService.isSuperAdmin(actor)) {
+      if (dto.facultyId) {
+        if (!Types.ObjectId.isValid(dto.facultyId)) {
+          throw new BadRequestException('Invalid facultyId');
+        }
+        facultyId = new Types.ObjectId(dto.facultyId);
+      }
+    } else if (this.userScopeService.isFacultyAdmin(actor)) {
+      /** Faculty admins cannot mint admins; they can only create users inside their own faculty. */
+      if (targetRole === 'super-admin' || targetRole === 'faculty-admin') {
+        throw new ForbiddenException(
+          'Faculty admins cannot create users with this role',
+        );
+      }
+      if (!actor.facultyId) {
+        throw new ForbiddenException('Faculty admin has no faculty scope');
+      }
+      facultyId = new Types.ObjectId(actor.facultyId);
+    } else {
+      throw new ForbiddenException('Insufficient permissions');
+    }
+
     const passcodeHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
-    return await this.userModel.create({
+    const created = await this.userModel.create({
       username,
       email: username,
       firstName: dto.firstName,
@@ -60,9 +102,19 @@ export class UsersService {
       phone: dto.phone,
       passcodeHash,
       role: new Types.ObjectId(dto.role),
+      facultyId,
       status: dto.status || 'active',
       isActive: dto.status !== 'inactive',
     });
+    await this.auditLog.record({
+      actor,
+      action: AuditAction.CREATE,
+      entityType: AuditEntity.USER,
+      entityId: created._id,
+      facultyId: created.facultyId,
+      after: { username, role: targetRole },
+    });
+    return created;
   }
 
   /** Public self-registration / auth (username + numeric passcode); separate from admin CreateUserDto. */
@@ -109,7 +161,10 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const updateData: any = { ...dto };
+    const updateData: Record<string, unknown> = { ...dto };
+    delete updateData.password;
+    delete updateData.role;
+    delete updateData.facultyId;
 
     if (dto.email) {
       const username = dto.email.trim().toLowerCase();
@@ -126,11 +181,37 @@ export class UsersService {
 
     if (dto.password) {
       updateData.passcodeHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-      delete updateData.password;
     }
 
     if (dto.role) {
+      /** Only Super Admin can rotate roles. Faculty admins cannot escalate or downgrade roles. */
+      if (!this.userScopeService.isSuperAdmin(actor)) {
+        throw new ForbiddenException(
+          'Only super admins can change a user role',
+        );
+      }
+      const roleName = await this.rolesService.findRoleNameById(
+        new Types.ObjectId(dto.role),
+      );
+      if (!roleName) {
+        throw new BadRequestException('Selected role does not exist');
+      }
       updateData.role = new Types.ObjectId(dto.role);
+    }
+
+    if (dto.facultyId !== undefined) {
+      /** Only Super Admin can move a user between faculties. */
+      if (!this.userScopeService.isSuperAdmin(actor)) {
+        throw new ForbiddenException(
+          'Only super admins can change a user faculty',
+        );
+      }
+      if (dto.facultyId && !Types.ObjectId.isValid(dto.facultyId)) {
+        throw new BadRequestException('Invalid facultyId');
+      }
+      updateData.facultyId = dto.facultyId
+        ? new Types.ObjectId(dto.facultyId)
+        : null;
     }
 
     if (dto.status) {
@@ -145,6 +226,15 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    await this.auditLog.record({
+      actor,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntity.USER,
+      entityId: updated._id,
+      facultyId: updated.facultyId,
+      after: updateData,
+    });
+
     return updated;
   }
 
@@ -157,6 +247,14 @@ export class UsersService {
     if (!result) {
       throw new NotFoundException('User not found');
     }
+    await this.auditLog.record({
+      actor,
+      action: AuditAction.DELETE,
+      entityType: AuditEntity.USER,
+      entityId: id,
+      facultyId: result.facultyId,
+      before: { username: result.username },
+    });
   }
 
   async bulkRemove(

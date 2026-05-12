@@ -106,6 +106,19 @@ export class AttendanceRecord {
 
   @Prop({ type: String })
   adminCheckOutNote?: string;
+
+  /* ── Automation bookkeeping ── */
+
+  /**
+   * Set whenever an automated job (auto-absent, auto-missed-checkout) writes
+   * a terminal status to this record. Used to keep cron sweeps idempotent.
+   */
+  @Prop({ type: Date, default: null })
+  automationProcessedAt: Date | null;
+
+  /** Type of automation that finalized this record, e.g. `AUTO_ABSENT`. */
+  @Prop({ type: String, default: null })
+  automationType: string | null;
 }
 
 export const AttendanceRecordSchema =

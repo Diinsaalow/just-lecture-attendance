@@ -34,6 +34,14 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: string;
 
+  /**
+   * Faculty Admins MUST not pass this — it is overridden with `actor.facultyId`.
+   * Super Admins may set it to assign the user to a specific faculty.
+   */
+  @IsMongoId()
+  @IsOptional()
+  facultyId?: string;
+
   @IsIn(['active', 'inactive', 'suspended'])
   @IsOptional()
   status?: string;

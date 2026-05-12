@@ -58,24 +58,40 @@ export function createAbilityForUser(user: IUser | null): AppAbility {
     if (n === 'faculty-admin') {
         can('manage', 'AcademicSetup');
         can('manage', 'Hall');
+        can('manage', 'Period');
         can('manage', 'ClassSession');
         can('read', 'Dashboard');
         can('read', 'Report');
         can('read', 'User');
         can('create', 'User');
         can('update', 'User');
+        can('delete', 'User');
         can('read', 'Role');
         can('read', 'Settings');
+        can('read', 'AttendanceRecord');
+        can('update', 'AttendanceRecord');
+        can('manage', 'AttendanceSettings');
+        can('read', 'BoundDevice');
+        can('delete', 'BoundDevice');
+        can('read', 'AbsenceSubmission');
+        can('update', 'AbsenceSubmission');
+        can('read', 'AuditLog');
         return build();
     }
 
     if (n === 'instructor') {
+        /** Instructor abilities mirror the mobile-app surface only; admin UI gates further. */
         can('read', 'AcademicSetup');
         can('read', 'Hall');
+        can('read', 'Period');
         can('read', 'ClassSession');
-        can('update', 'ClassSession');
         can('read', 'Dashboard');
-        can('read', 'Report');
+        can('read', 'AttendanceRecord');
+        can('create', 'AttendanceRecord');
+        can('create', 'BoundDevice');
+        can('read', 'BoundDevice');
+        can('create', 'AbsenceSubmission');
+        can('read', 'AbsenceSubmission');
         return build();
     }
 

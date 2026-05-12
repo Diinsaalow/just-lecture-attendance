@@ -14,6 +14,7 @@ import {
   ClassSession,
   ClassSessionDocument,
 } from '../class-session/schemas/class-session.schema';
+import { ClassSessionStatus } from '../class-session/enums/class-session-status.enum';
 import { Hall, HallDocument } from '../hall/schemas/hall.schema';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -21,8 +22,16 @@ import { AdminCheckOutDto } from './dto/admin-check-out.dto';
 import { AttendanceSettingsService } from '../attendance-settings/attendance-settings.service';
 import { DeviceService } from '../device/device.service';
 import { CheckInMethod } from './enums/check-in-method.enum';
-import { AttendanceStatus } from './enums/attendance-status.enum';
+import { AttendanceStatus, StatusFlag } from './enums/attendance-status.enum';
 import { isWithinGeofence } from '../hall/hall-geofence.util';
+import { combineUtcDateAndTime } from './utils/session-time.util';
+
+/** Set of session statuses that block any further attendance activity. */
+const TERMINAL_SESSION_STATUSES = new Set<ClassSessionStatus>([
+  ClassSessionStatus.CANCELLED,
+  ClassSessionStatus.COMPLETED,
+  ClassSessionStatus.NO_SHOW,
+]);
 
 @Injectable()
 export class AttendanceValidationService {
@@ -39,7 +48,7 @@ export class AttendanceValidationService {
 
   /**
    * Complete validation pipeline for Check-In.
-   * Returns a fully constructed AttendanceRecord ready to be saved.
+   * Returns a fully constructed AttendanceRecord payload ready to be persisted.
    */
   async validateCheckIn(
     dto: CheckInDto,
@@ -47,18 +56,21 @@ export class AttendanceValidationService {
   ): Promise<Partial<AttendanceRecord>> {
     const settings = await this.settingsService.getSettingsOrFail();
 
-    // 1. Load Session
     const session = await this.sessionModel.findById(dto.sessionId).exec();
     if (!session) throw new NotFoundException('Session not found');
 
-    // 2. Instructor Assignment
+    if (TERMINAL_SESSION_STATUSES.has(session.status)) {
+      throw new BadRequestException(
+        `Session is ${session.status.toLowerCase()} and no longer accepts attendance`,
+      );
+    }
+
     if (String(session.lecturerId) !== instructorUserId) {
       throw new BadRequestException(
         'You are not the assigned instructor for this session',
       );
     }
 
-    // 3. Duplicate Check
     const existing = await this.attendanceModel
       .findOne({ sessionId: dto.sessionId, instructorUserId })
       .exec();
@@ -69,38 +81,21 @@ export class AttendanceValidationService {
     }
 
     const now = new Date();
-    const scheduledDate = new Date(session.scheduledDate);
-    const [startH, startM] = session.fromTime.split(':').map(Number);
-    const [endH, endM] = session.toTime.split(':').map(Number);
+    const sessionStart = combineUtcDateAndTime(
+      session.scheduledDate,
+      session.fromTime,
+    );
+    const sessionEnd = combineUtcDateAndTime(
+      session.scheduledDate,
+      session.toTime,
+    );
 
-    const sessionStart = new Date(scheduledDate);
-    sessionStart.setHours(startH, startM, 0, 0);
-
-    const sessionEnd = new Date(scheduledDate);
-    sessionEnd.setHours(endH, endM, 0, 0);
-
-    // 4. Schedule Date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const sessionDateOnly = new Date(scheduledDate);
-    sessionDateOnly.setHours(0, 0, 0, 0);
-
-    if (today.getTime() !== sessionDateOnly.getTime()) {
-      throw new BadRequestException(
-        'You can only check in to sessions scheduled for today',
-      );
-    }
-
-    // 5. Time Window
     const windowStart = new Date(
       sessionStart.getTime() - settings.checkInWindowBeforeMinutes * 60000,
     );
-    let windowEnd = sessionEnd;
-    if (settings.checkInWindowAfterMinutes > 0) {
-      windowEnd = new Date(
-        sessionEnd.getTime() + settings.checkInWindowAfterMinutes * 60000,
-      );
-    }
+    const windowEnd = new Date(
+      sessionEnd.getTime() + settings.checkInWindowAfterMinutes * 60000,
+    );
 
     if (now < windowStart) {
       throw new BadRequestException(
@@ -113,7 +108,6 @@ export class AttendanceValidationService {
       );
     }
 
-    // 6. Device Validation
     if (settings.deviceValidationEnabled) {
       const isDeviceValid = await this.deviceService.verify(
         instructorUserId,
@@ -126,22 +120,23 @@ export class AttendanceValidationService {
       }
     }
 
-    // 7. Hall Geofence Validation
-    if (settings.geofenceEnabled && session.hallId) {
+    if (settings.geofenceEnabled) {
+      if (!session.hallId) {
+        throw new BadRequestException(
+          'Session has no hall assigned — cannot verify geofence',
+        );
+      }
       const hall = await this.hallModel.findById(session.hallId).exec();
       if (!hall) throw new NotFoundException('Assigned hall not found');
-
       if (
         hall.latitude === undefined ||
         hall.longitude === undefined ||
         hall.geofenceRadiusMeters === undefined
       ) {
-        // Fail closed if geofence is enabled but hall lacks coords
         throw new BadRequestException(
           'Hall geolocation data is missing. Cannot verify geofence.',
         );
       }
-
       const inside = isWithinGeofence(
         hall.latitude,
         hall.longitude,
@@ -156,8 +151,17 @@ export class AttendanceValidationService {
       }
     }
 
-    // 8. Method Validation (QR Code)
-    if (dto.method === CheckInMethod.QR_CODE && settings.qrCodeEnabled) {
+    if (dto.method === CheckInMethod.QR_CODE) {
+      if (!settings.qrCodeEnabled) {
+        throw new BadRequestException(
+          'QR code check-in is not enabled by the administrator',
+        );
+      }
+      if (!session.hallId) {
+        throw new BadRequestException(
+          'Session has no hall assigned — cannot validate QR',
+        );
+      }
       const hall = await this.hallModel.findById(session.hallId).exec();
       if (!hall) throw new NotFoundException('Assigned hall not found');
       if (!dto.qrPayload) {
@@ -168,18 +172,17 @@ export class AttendanceValidationService {
       }
     }
 
-    // 9. Late Calculation
     const flags: string[] = [];
     const lateThresholdTime = new Date(
       sessionStart.getTime() + settings.lateThresholdMinutes * 60000,
     );
     if (now > lateThresholdTime) {
-      flags.push('LATE');
+      flags.push(StatusFlag.LATE);
     }
 
     return {
       sessionId: session._id,
-      instructorUserId: instructorUserId as any,
+      instructorUserId: instructorUserId as never,
       facultyId: session.facultyId,
       campusId: session.campusId,
       hallId: session.hallId,
@@ -197,13 +200,21 @@ export class AttendanceValidationService {
 
   /**
    * Complete validation pipeline for Check-Out.
-   * Modifies existing record and returns it ready to save.
+   * Mutates the existing record and returns it ready to save.
    */
   async validateCheckOut(
     dto: CheckOutDto,
     instructorUserId: string,
   ): Promise<AttendanceRecordDocument> {
     const settings = await this.settingsService.getSettingsOrFail();
+
+    const session = await this.sessionModel.findById(dto.sessionId).exec();
+    if (!session) throw new NotFoundException('Session not found');
+    if (TERMINAL_SESSION_STATUSES.has(session.status)) {
+      throw new BadRequestException(
+        `Session is ${session.status.toLowerCase()} and no longer accepts attendance`,
+      );
+    }
 
     const record = await this.attendanceModel
       .findOne({ sessionId: dto.sessionId, instructorUserId })
@@ -218,16 +229,11 @@ export class AttendanceValidationService {
       );
     }
 
-    const session = await this.sessionModel.findById(dto.sessionId).exec();
-    if (!session) throw new NotFoundException('Session not found');
-
     const now = new Date();
-    const scheduledDate = new Date(session.scheduledDate);
-    const [endH, endM] = session.toTime.split(':').map(Number);
-    const sessionEnd = new Date(scheduledDate);
-    sessionEnd.setHours(endH, endM, 0, 0);
-
-    // 1. Time Window (Grace Period)
+    const sessionEnd = combineUtcDateAndTime(
+      session.scheduledDate,
+      session.toTime,
+    );
     const gracePeriodEnd = new Date(
       sessionEnd.getTime() + settings.checkOutGracePeriodMinutes * 60000,
     );
@@ -237,7 +243,6 @@ export class AttendanceValidationService {
       );
     }
 
-    // 2. Device Validation
     if (settings.deviceValidationEnabled) {
       const isDeviceValid = await this.deviceService.verify(
         instructorUserId,
@@ -248,44 +253,67 @@ export class AttendanceValidationService {
       }
     }
 
-    // 3. Hall Geofence Validation
-    if (settings.geofenceEnabled && session.hallId) {
-      const hall = await this.hallModel.findById(session.hallId).exec();
-      if (
-        hall &&
-        hall.latitude !== undefined &&
-        hall.longitude !== undefined &&
-        hall.geofenceRadiusMeters !== undefined
-      ) {
-        const inside = isWithinGeofence(
-          hall.latitude,
-          hall.longitude,
-          hall.geofenceRadiusMeters,
-          dto.latitude,
-          dto.longitude,
+    if (settings.geofenceEnabled) {
+      if (!session.hallId) {
+        throw new BadRequestException(
+          'Session has no hall assigned — cannot verify geofence',
         );
-        if (!inside) {
-          throw new BadRequestException(
-            'You are outside the permitted geofence for this classroom',
-          );
-        }
+      }
+      const hall = await this.hallModel.findById(session.hallId).exec();
+      if (!hall) throw new NotFoundException('Assigned hall not found');
+      if (
+        hall.latitude === undefined ||
+        hall.longitude === undefined ||
+        hall.geofenceRadiusMeters === undefined
+      ) {
+        /** Fail-closed: never allow check-out when geofence is required but hall lacks coords. */
+        throw new BadRequestException(
+          'Hall geolocation data is missing. Cannot verify geofence.',
+        );
+      }
+      const inside = isWithinGeofence(
+        hall.latitude,
+        hall.longitude,
+        hall.geofenceRadiusMeters,
+        dto.latitude,
+        dto.longitude,
+      );
+      if (!inside) {
+        throw new BadRequestException(
+          'You are outside the permitted geofence for this classroom',
+        );
       }
     }
 
-    // 4. Early Check-out Calculation
+    if (dto.method === CheckInMethod.QR_CODE) {
+      if (!settings.qrCodeEnabled) {
+        throw new BadRequestException(
+          'QR code check-out is not enabled by the administrator',
+        );
+      }
+      if (!session.hallId) {
+        throw new BadRequestException(
+          'Session has no hall assigned — cannot validate QR',
+        );
+      }
+      const hall = await this.hallModel.findById(session.hallId).exec();
+      if (!hall) throw new NotFoundException('Assigned hall not found');
+      if (!dto.qrPayload) {
+        throw new BadRequestException('QR payload missing for QR check-out');
+      }
+      if (hall.qrCodeToken !== dto.qrPayload) {
+        throw new BadRequestException('Invalid or expired QR code for this hall');
+      }
+    }
+
     const earlyThresholdTime = new Date(
       sessionEnd.getTime() - settings.earlyCheckoutThresholdMinutes * 60000,
     );
     if (now < earlyThresholdTime) {
-      if (!record.statusFlags.includes('EARLY_CHECKOUT')) {
-        record.statusFlags.push('EARLY_CHECKOUT');
+      if (!record.statusFlags.includes(StatusFlag.EARLY_CHECKOUT)) {
+        record.statusFlags.push(StatusFlag.EARLY_CHECKOUT);
       }
     }
-
-    // Update status based on flags
-    record.status = record.statusFlags.includes('LATE')
-      ? AttendanceStatus.LATE
-      : AttendanceStatus.PRESENT;
 
     record.checkOutAt = now;
     record.checkOutMethod = dto.method;
@@ -295,16 +323,23 @@ export class AttendanceValidationService {
       (now.getTime() - record.checkInAt.getTime()) / 60000,
     );
 
+    record.status = this.computeFinalStatus(record.statusFlags);
+
     return record;
   }
 
   /**
-   * Validate admin check-out on behalf of instructor.
+   * Admin check-out: closes an instructor's open record on their behalf.
+   * Scope is verified at the controller layer (`ensureClassSessionInScope`
+   * + `ensureUserInScope`); this method only handles state transitions.
    */
   async validateAdminCheckOut(
     dto: AdminCheckOutDto,
     adminUserId: string,
   ): Promise<AttendanceRecordDocument> {
+    const session = await this.sessionModel.findById(dto.sessionId).exec();
+    if (!session) throw new NotFoundException('Session not found');
+
     const record = await this.attendanceModel
       .findOne({
         sessionId: dto.sessionId,
@@ -321,26 +356,38 @@ export class AttendanceValidationService {
       throw new ConflictException('Instructor is already checked out');
     }
 
-    const session = await this.sessionModel.findById(dto.sessionId).exec();
-    if (!session) throw new NotFoundException('Session not found');
-
     const now = new Date();
     record.checkOutAt = now;
-    record.adminCheckOutBy = adminUserId as any;
+    record.adminCheckOutBy = adminUserId as never;
     record.adminCheckOutAt = now;
     record.adminCheckOutNote = dto.note;
     record.actualDurationMinutes = Math.round(
       (now.getTime() - record.checkInAt.getTime()) / 60000,
     );
 
-    record.status = record.statusFlags.includes('LATE')
-      ? AttendanceStatus.LATE
-      : AttendanceStatus.PRESENT;
-
-    if (!record.irregularityReasons.includes('ADMIN_CHECKOUT')) {
-      record.irregularityReasons.push('ADMIN_CHECKOUT');
+    if (!record.irregularityReasons.includes(StatusFlag.ADMIN_CHECKOUT)) {
+      record.irregularityReasons.push(StatusFlag.ADMIN_CHECKOUT);
     }
 
+    record.status = this.computeFinalStatus(record.statusFlags);
+
     return record;
+  }
+
+  /**
+   * Deterministic final-status calculation based on `statusFlags`.
+   *  - LATE   + EARLY_CHECKOUT → EARLY_CHECKOUT (more severe, surfaces partial attendance)
+   *  - LATE                   → LATE
+   *  - EARLY_CHECKOUT         → EARLY_CHECKOUT
+   *  - otherwise              → PRESENT
+   */
+  private computeFinalStatus(flags: string[]): AttendanceStatus {
+    if (flags.includes(StatusFlag.EARLY_CHECKOUT)) {
+      return AttendanceStatus.EARLY_CHECKOUT;
+    }
+    if (flags.includes(StatusFlag.LATE)) {
+      return AttendanceStatus.LATE;
+    }
+    return AttendanceStatus.PRESENT;
   }
 }

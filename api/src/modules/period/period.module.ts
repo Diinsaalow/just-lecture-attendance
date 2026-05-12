@@ -5,6 +5,11 @@ import { LectureClassModule } from '../classes/lecture-class.module';
 import { CourseModule } from '../course/course.module';
 import { SemesterModule } from '../semester/semester.module';
 import { UsersModule } from '../users/users.module';
+import { RolesModule } from '../roles/roles.module';
+import {
+  Department,
+  DepartmentSchema,
+} from '../department/schemas/department.schema';
 import { Period, PeriodSchema } from './schemas/period.schema';
 import { PeriodController } from './period.controller';
 import { PeriodService } from './period.service';
@@ -16,7 +21,11 @@ import { PeriodService } from './period.service';
     CourseModule,
     SemesterModule,
     UsersModule,
-    MongooseModule.forFeature([{ name: Period.name, schema: PeriodSchema }]),
+    RolesModule,
+    MongooseModule.forFeature([
+      { name: Period.name, schema: PeriodSchema },
+      { name: Department.name, schema: DepartmentSchema },
+    ]),
   ],
   controllers: [PeriodController],
   providers: [PeriodService],

@@ -1,4 +1,21 @@
-import { LayoutDashboard, Users, Settings, GraduationCap, CalendarDays, CalendarRange, Building2, School, Layers, BookOpen, Library, Clock, MapPinned } from 'lucide-react';
+import {
+    LayoutDashboard,
+    Users,
+    Settings,
+    GraduationCap,
+    CalendarDays,
+    CalendarRange,
+    Building2,
+    School,
+    Layers,
+    BookOpen,
+    Library,
+    Clock,
+    MapPinned,
+    FileText,
+    ClipboardList,
+    ShieldAlert,
+} from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
 
@@ -85,6 +102,31 @@ export const sidebarMenu: MenuItem[] = [
         path: '/classes',
         resource: 'AcademicSetup',
         action: academicActions,
+    },
+    {
+        title: 'attendance_section',
+        isSection: true,
+    },
+    {
+        title: 'submissions_menu',
+        icon: FileText,
+        path: '/submissions',
+        resource: 'AbsenceSubmission',
+        action: ['read', 'update'],
+    },
+    {
+        title: 'reports_menu',
+        icon: ClipboardList,
+        path: '/reports',
+        resource: 'Report',
+        action: 'read',
+    },
+    {
+        title: 'audit_logs_menu',
+        icon: ShieldAlert,
+        path: '/audit-logs',
+        resource: 'AuditLog',
+        action: 'read',
     },
     {
         title: 'system settings',

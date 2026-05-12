@@ -34,8 +34,8 @@ export class UsersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @CheckPolicies(CreateUserPolicy)
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  create(@Body() dto: CreateUserDto, @CurrentUser() user: AuthUserPayload) {
+    return this.usersService.create(dto, user);
   }
 
   @Get()

@@ -88,33 +88,26 @@ export async function paginateFind<TDoc>(
     .limit(limit)
     .lean();
 
-  const populations: any[] = [];
+  /**
+   * Populate is server-side only. We intentionally ignore `q.options.populate`
+   * and `q.populate` from the request so clients can't traverse refs and leak
+   * out-of-scope data.
+   */
+  const populations: PopulateOptions[] = [];
   if (opts.populate) {
     if (Array.isArray(opts.populate)) {
-      populations.push(...opts.populate);
+      for (const p of opts.populate) {
+        populations.push(typeof p === 'string' ? { path: p } : p);
+      }
+    } else if (typeof opts.populate === 'string') {
+      populations.push({ path: opts.populate });
     } else {
       populations.push(opts.populate);
     }
   }
 
-  if (q.options?.populate) {
-    if (Array.isArray(q.options.populate)) {
-      populations.push(...q.options.populate);
-    } else {
-      populations.push(q.options.populate);
-    }
-  }
-
-  if ((q as any).populate) {
-    if (Array.isArray((q as any).populate)) {
-      populations.push(...(q as any).populate);
-    } else {
-      populations.push((q as any).populate);
-    }
-  }
-
   if (populations.length > 0) {
-    query = query.populate(populations as any);
+    query = query.populate(populations);
   }
   const [docs, totalDocs] = await Promise.all([
     query.exec() as Promise<TDoc[]>,

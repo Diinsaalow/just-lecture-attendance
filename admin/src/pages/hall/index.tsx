@@ -117,7 +117,6 @@ const HallList = () => {
                 sortCol="createdAt"
                 className="mt-5"
                 query={{}}
-                populate={[{ path: 'campusId', select: 'campusName' }]}
                 rowSelectionEnabled={can('delete', 'Hall')}
                 onSelectionChange={setSelectedRecords}
                 bulkActions={

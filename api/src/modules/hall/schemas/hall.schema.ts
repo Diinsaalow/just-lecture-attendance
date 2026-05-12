@@ -54,3 +54,5 @@ export class Hall {
 }
 
 export const HallSchema = SchemaFactory.createForClass(Hall);
+
+HallSchema.index({ campusId: 1, code: 1 }, { unique: true });

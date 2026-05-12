@@ -26,6 +26,15 @@ import {
   Department,
   DepartmentDocument,
 } from '../department/schemas/department.schema';
+import { AttendanceSettingsService } from '../attendance-settings/attendance-settings.service';
+import {
+  AttendanceRecord,
+  AttendanceRecordDocument,
+} from '../attendance/schemas/attendance-record.schema';
+import {
+  combineUtcDateAndTime,
+  startOfUtcDay as startOfUtcDayHelper,
+} from '../attendance/utils/session-time.util';
 import {
   ClassSession,
   ClassSessionDocument,
@@ -39,6 +48,11 @@ import {
   startOfUtcDay,
   utcDayIndexFromWeekdayName,
 } from './utils/session-calendar.util';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import {
+  AuditAction,
+  AuditEntity,
+} from '../audit-log/enums/audit-action.enum';
 
 @Injectable()
 export class ClassSessionService {
@@ -53,9 +67,111 @@ export class ClassSessionService {
     private readonly departmentModel: Model<DepartmentDocument>,
     @InjectModel(Semester.name)
     private readonly semesterModel: Model<SemesterDocument>,
+    @InjectModel(AttendanceRecord.name)
+    private readonly attendanceModel: Model<AttendanceRecordDocument>,
     private readonly semesterService: SemesterService,
     private readonly userScopeService: UserScopeService,
+    private readonly attendanceSettingsService: AttendanceSettingsService,
+    private readonly auditLog: AuditLogService,
   ) {}
+
+  /** Sessions assigned to the authenticated instructor for today (UTC). */
+  async findMyToday(user: AuthUserPayload): Promise<ClassSession[]> {
+    const today = startOfUtcDayHelper(new Date());
+    return this.findInstructorSessionsInRange(user, today, today);
+  }
+
+  /**
+   * Instructor's sessions in the inclusive `[from, to]` date range.
+   * Dates are interpreted as UTC calendar days.
+   */
+  async findMyRange(
+    user: AuthUserPayload,
+    from?: string,
+    to?: string,
+  ): Promise<ClassSession[]> {
+    const fromDate = from ? startOfUtcDayHelper(new Date(from)) : null;
+    const toDate = to ? startOfUtcDayHelper(new Date(to)) : null;
+    if (
+      (fromDate && isNaN(fromDate.getTime())) ||
+      (toDate && isNaN(toDate.getTime()))
+    ) {
+      throw new BadRequestException('Invalid from/to date');
+    }
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException('from must be on or before to');
+    }
+    /** Default window: ±14 days around today when neither is provided. */
+    const today = startOfUtcDayHelper(new Date());
+    const start =
+      fromDate ?? new Date(today.getTime() - 14 * 86400000);
+    const end =
+      toDate ?? new Date(today.getTime() + 14 * 86400000);
+    return this.findInstructorSessionsInRange(user, start, end);
+  }
+
+  /**
+   * The single currently-active session the instructor should be checking
+   * in/out of right now, based on `AttendanceSettings.checkInWindowBefore/After`.
+   * Returns null when nothing is open.
+   */
+  async findMyActiveSession(
+    user: AuthUserPayload,
+  ): Promise<ClassSession | null> {
+    const now = new Date();
+    const settings = await this.attendanceSettingsService.getSettingsOrFail();
+    const today = startOfUtcDayHelper(now);
+    const candidates = await this.findInstructorSessionsInRange(
+      user,
+      today,
+      today,
+    );
+    for (const s of candidates) {
+      const start = combineUtcDateAndTime(s.scheduledDate, s.fromTime);
+      const end = combineUtcDateAndTime(s.scheduledDate, s.toTime);
+      const open = new Date(
+        start.getTime() - settings.checkInWindowBeforeMinutes * 60000,
+      );
+      const close = new Date(
+        end.getTime() +
+          Math.max(
+            settings.checkInWindowAfterMinutes,
+            settings.checkOutGracePeriodMinutes,
+          ) *
+            60000,
+      );
+      if (now >= open && now <= close) {
+        return s;
+      }
+    }
+    return null;
+  }
+
+  private async findInstructorSessionsInRange(
+    user: AuthUserPayload,
+    fromUtc: Date,
+    toUtcInclusive: Date,
+  ): Promise<ClassSession[]> {
+    if (!this.userScopeService.isInstructor(user)) {
+      /** Mobile-only endpoints — admins should use the global tables. */
+      throw new BadRequestException(
+        'This endpoint is only available for instructor accounts',
+      );
+    }
+    const end = new Date(toUtcInclusive.getTime() + 86400000 - 1);
+    return this.classSessionModel
+      .find({
+        lecturerId: new Types.ObjectId(user.id),
+        scheduledDate: { $gte: fromUtc, $lte: end },
+      })
+      .sort({ scheduledDate: 1, fromTime: 1 })
+      .populate([
+        { path: 'classId', select: 'name' },
+        { path: 'courseId', select: 'name' },
+        { path: 'hallId', select: 'name code' },
+      ])
+      .exec();
+  }
 
   /**
    * Semesters that have at least one timetable period visible to the user.
@@ -237,6 +353,18 @@ export class ClassSessionService {
         status: dto.status ?? ClassSessionStatus.SCHEDULED,
         createdBy: new Types.ObjectId(user.id),
       });
+      await this.auditLog.record({
+        actor: user,
+        action: AuditAction.CREATE,
+        entityType: AuditEntity.CLASS_SESSION,
+        entityId: doc._id,
+        facultyId: doc.facultyId,
+        after: {
+          periodId: String(doc.periodId),
+          scheduledDate: doc.scheduledDate,
+          status: doc.status,
+        },
+      });
       return this.populateSession(doc._id);
     } catch (error) {
       this.throwIfDuplicate(error);
@@ -356,6 +484,14 @@ export class ClassSessionService {
       if (!doc) {
         throw new NotFoundException('Class session not found');
       }
+      await this.auditLog.record({
+        actor: user,
+        action: AuditAction.UPDATE,
+        entityType: AuditEntity.CLASS_SESSION,
+        entityId: doc._id,
+        facultyId: doc.facultyId,
+        after: { ...patch },
+      });
       return doc;
     } catch (error) {
       this.throwIfDuplicate(error);
@@ -369,6 +505,17 @@ export class ClassSessionService {
     if (!doc) {
       throw new NotFoundException('Class session not found');
     }
+    await this.auditLog.record({
+      actor: user,
+      action: AuditAction.DELETE,
+      entityType: AuditEntity.CLASS_SESSION,
+      entityId: id,
+      facultyId: doc.facultyId,
+      before: {
+        scheduledDate: doc.scheduledDate,
+        periodId: String(doc.periodId),
+      },
+    });
   }
 
   private async buildSnapshotFromPeriod(

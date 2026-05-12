@@ -6,11 +6,17 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import {
+  AuditAction,
+  AuditEntity,
+} from '../audit-log/enums/audit-action.enum';
 
 @Injectable()
 export class DeviceService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   /**
@@ -39,12 +45,20 @@ export class DeviceService {
         { $set: { registeredDeviceId: deviceId } },
         { new: true },
       )
-      .select('registeredDeviceId')
+      .select('registeredDeviceId facultyId')
       .exec();
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    await this.auditLog.record({
+      action: AuditAction.DEVICE_REGISTER,
+      entityType: AuditEntity.DEVICE,
+      entityId: userId,
+      facultyId: user.facultyId,
+      after: { deviceId },
+    });
 
     return { message: 'Device registered successfully', deviceId };
   }
@@ -80,9 +94,14 @@ export class DeviceService {
 
   /**
    * Clear (unregister) the device for the given user.
-   * Used by admins or the instructor themselves.
+   * Used by admins or the instructor themselves. Scope is verified at the
+   * controller layer (`ensureUserInScope`).
    */
   async clearDevice(userId: string): Promise<{ message: string }> {
+    const before = await this.userModel
+      .findById(userId)
+      .select('registeredDeviceId facultyId')
+      .lean();
     const user = await this.userModel
       .findByIdAndUpdate(
         userId,
@@ -94,6 +113,16 @@ export class DeviceService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    await this.auditLog.record({
+      action: AuditAction.DEVICE_CLEAR,
+      entityType: AuditEntity.DEVICE,
+      entityId: userId,
+      facultyId: user.facultyId,
+      before: before?.registeredDeviceId
+        ? { deviceId: before.registeredDeviceId }
+        : null,
+    });
 
     return { message: 'Device unregistered successfully' };
   }

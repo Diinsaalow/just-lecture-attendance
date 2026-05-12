@@ -27,6 +27,10 @@ import AttendanceSettingsPage from '../pages/settings/attendance';
 
 import SystemDashboard from '../pages/dashboard/SystemDashboard';
 
+import SubmissionsPage from '../pages/submissions';
+import AuditLogsPage from '../pages/audit-logs';
+import ReportsPage from '../pages/reports';
+
 export type RouteConfig = {
     path?: string;
     index?: boolean;
@@ -189,6 +193,30 @@ export const protectedRoutes: RouteConfig[] = [
         isPublic: false,
         resource: 'ClassSession',
         action: ['read', 'create', 'update', 'delete'],
+    },
+    {
+        path: '/submissions',
+        element: <SubmissionsPage />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AbsenceSubmission',
+        action: ['read', 'update'],
+    },
+    {
+        path: '/audit-logs',
+        element: <AuditLogsPage />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AuditLog',
+        action: 'read',
+    },
+    {
+        path: '/reports',
+        element: <ReportsPage />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'Report',
+        action: 'read',
     },
     {
         path: '/classes',

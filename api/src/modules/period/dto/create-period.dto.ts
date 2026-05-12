@@ -2,14 +2,15 @@ import {
   Allow,
   IsEnum,
   IsMongoId,
-  IsNotEmpty,
   IsOptional,
-  IsString,
-  MaxLength,
+  Matches,
   ValidateIf,
 } from 'class-validator';
 import { EntityStatus } from '../../../common/enums/entity-status.enum';
 import { TimetablePeriodType } from '../enums/timetable-period-type.enum';
+import { Weekday } from '../enums/weekday.enum';
+
+const HHMM_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export class CreatePeriodDto {
   @IsMongoId()
@@ -24,22 +25,16 @@ export class CreatePeriodDto {
   @IsMongoId()
   semesterId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(50)
-  day: string;
+  @IsEnum(Weekday, { message: 'day must be a valid weekday name' })
+  day: Weekday;
 
   @IsEnum(TimetablePeriodType)
   type: TimetablePeriodType;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
+  @Matches(HHMM_REGEX, { message: 'from must be HH:mm 24-hour format' })
   from: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
+  @Matches(HHMM_REGEX, { message: 'to must be HH:mm 24-hour format' })
   to: string;
 
   @Allow()

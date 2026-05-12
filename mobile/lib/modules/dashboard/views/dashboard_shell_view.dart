@@ -6,6 +6,7 @@ import 'package:mobile/modules/dashboard/views/absence_request_view.dart';
 import 'package:mobile/modules/dashboard/views/attendance_history_view.dart';
 import 'package:mobile/modules/dashboard/views/dashboard_view.dart';
 import 'package:mobile/modules/dashboard/views/profile_view.dart';
+import 'package:mobile/modules/home/home_view.dart';
 
 class DashboardShellView extends GetView<DashboardShellController> {
   const DashboardShellView({super.key});
@@ -13,7 +14,7 @@ class DashboardShellView extends GetView<DashboardShellController> {
   @override
   Widget build(BuildContext context) {
     final tabs = <Widget>[
-      const DashboardView(),
+      const HomeView(),
       const AttendanceHistoryView(),
       const AbsenceRequestView(),
       const ProfileView(),

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CaslModule } from './common/casl/casl.module';
@@ -23,6 +24,9 @@ import { ClassSessionModule } from './modules/class-session/class-session.module
 import { AttendanceSettingsModule } from './modules/attendance-settings/attendance-settings.module';
 import { DeviceModule } from './modules/device/device.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { SubmissionModule } from './modules/submission/submission.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -30,8 +34,10 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     CaslModule,
+    AuditLogModule,
     RolesModule,
     UsersModule,
     AuthModule,
@@ -48,6 +54,8 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
     AttendanceSettingsModule,
     DeviceModule,
     AttendanceModule,
+    SubmissionModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

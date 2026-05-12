@@ -63,102 +63,21 @@ export const formatQueryParams = (options: any) => {
         }
     }
 
-    // Handle root-level populate parameters (for single item queries)
-    if (options.populate) {
-        const processPopulate = (populate: any, basePath: string) => {
-            if (typeof populate === 'string') {
-                return { path: populate };
-            }
-            return populate;
-        };
+    /*
+     * `populate` was previously serialized into the URL, but the backend now
+     * applies population server-side and rejects any client-supplied populate
+     * to prevent unbounded data exposure. We accept the legacy `populate` and
+     * `options.populate` keys for backwards-compatibility with existing pages
+     * but never forward them.
+     */
 
-        const addPopulateParams = (populate: any, baseKey: string) => {
-            if (!populate) return;
-
-            // Add basic populate properties
-            if (populate.path) params[`${baseKey}[path]`] = populate.path;
-            if (populate.dir) params[`${baseKey}[dir]`] = populate.dir;
-            if (populate.select) params[`${baseKey}[select]`] = populate.select;
-
-            // Handle nested populate
-            if (populate.populate) {
-                if (Array.isArray(populate.populate)) {
-                    // Handle array of nested populate options
-                    populate.populate.forEach((nestedPopulate: any, nestedIndex: number) => {
-                        const nestedPopulateObj = processPopulate(nestedPopulate, `${baseKey}[populate][${nestedIndex}]`);
-                        const nestedKey = `${baseKey}[populate][${nestedIndex}]`;
-                        addPopulateParams(nestedPopulateObj, nestedKey);
-                    });
-                } else if (typeof populate.populate === 'string') {
-                    // Handle string populate
-                    params[`${baseKey}[populate]`] = populate.populate;
-                } else if (typeof populate.populate === 'object') {
-                    // Handle single object populate
-                    const nestedKey = `${baseKey}[populate]`;
-                    addPopulateParams(populate.populate, nestedKey);
-                }
-            }
-        };
-
-        options.populate.forEach((populate: any, index: number) => {
-            const baseKey = `populate[${index}]`;
-            addPopulateParams(populate, baseKey);
-        });
-    }
-
-    // Handle options parameters
     if (options.options) {
-        // Pagination
         if (options.options.page !== undefined) params['options[page]'] = options.options.page;
         if (options.options.limit !== undefined) params['options[limit]'] = options.options.limit;
 
-        // Sorting
         if (options.options.sort) {
             Object.entries(options.options.sort).forEach(([field, direction]) => {
                 params[`options[sort][${field}]`] = direction;
-            });
-        }
-
-        // Population
-        if (options.options.populate) {
-            const processPopulate = (populate: any, basePath: string) => {
-                if (typeof populate === 'string') {
-                    return { path: populate };
-                }
-                return populate;
-            };
-
-            const addPopulateParams = (populate: any, baseKey: string) => {
-                if (!populate) return;
-
-                // Add basic populate properties
-                if (populate.path) params[`${baseKey}[path]`] = populate.path;
-                if (populate.dir) params[`${baseKey}[dir]`] = populate.dir;
-                if (populate.select) params[`${baseKey}[select]`] = populate.select;
-
-                // Handle nested populate
-                if (populate.populate) {
-                    if (Array.isArray(populate.populate)) {
-                        // Handle array of nested populate options
-                        populate.populate.forEach((nestedPopulate: any, nestedIndex: number) => {
-                            const nestedPopulateObj = processPopulate(nestedPopulate, `${baseKey}[populate][${nestedIndex}]`);
-                            const nestedKey = `${baseKey}[populate][${nestedIndex}]`;
-                            addPopulateParams(nestedPopulateObj, nestedKey);
-                        });
-                    } else if (typeof populate.populate === 'string') {
-                        // Handle string populate
-                        params[`${baseKey}[populate]`] = populate.populate;
-                    } else if (typeof populate.populate === 'object') {
-                        // Handle single object populate
-                        const nestedKey = `${baseKey}[populate]`;
-                        addPopulateParams(populate.populate, nestedKey);
-                    }
-                }
-            };
-
-            options.options.populate.forEach((populate: any, index: number) => {
-                const baseKey = `options[populate][${index}]`;
-                addPopulateParams(populate, baseKey);
             });
         }
     }

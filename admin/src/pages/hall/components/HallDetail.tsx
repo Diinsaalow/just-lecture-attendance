@@ -17,10 +17,7 @@ function campusLabel(campusId: IHall['campusId']): string {
 
 const HallDetail: React.FC<Props> = ({ hallId }) => {
     const id = hallId ? String(hallId) : '';
-    const { data: row, isLoading } = useGetHallByIdQuery(
-        { id, params: { options: { populate: [{ path: 'campusId', select: 'campusName' }] } } },
-        { skip: !id },
-    );
+    const { data: row, isLoading } = useGetHallByIdQuery(id, { skip: !id });
     const [regenerateQr, { isLoading: isRegenerating }] = useRegenerateHallQrMutation();
 
     if (isLoading) return <p className="text-gray-500">Loading...</p>;

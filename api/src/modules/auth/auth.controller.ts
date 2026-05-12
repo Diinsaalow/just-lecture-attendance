@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Post,
@@ -30,12 +29,8 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(
-    @Body() dto: RegisterDto,
-    @Headers('x-admin-registration-key') adminKey?: string | string[],
-  ) {
-    const key = Array.isArray(adminKey) ? adminKey[0] : adminKey;
-    return this.authService.register(dto, key);
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
   }
 
   @Public()

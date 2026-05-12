@@ -47,11 +47,15 @@ export class AttendanceController {
   @Post('admin/check-out')
   @HttpCode(HttpStatus.OK)
   @CheckPolicies(UpdateAttendanceRecordPolicy)
-  adminCheckOut(
+  async adminCheckOut(
     @Body() dto: AdminCheckOutDto,
     @CurrentUser() adminUser: AuthUserPayload,
   ) {
-    // Note: UserScopeService could verify if admin has scope over dto.instructorUserId
+    await this.userScopeService.ensureClassSessionInScope(
+      adminUser,
+      dto.sessionId,
+    );
+    await this.userScopeService.ensureUserInScope(adminUser, dto.instructorUserId);
     return this.attendanceService.adminCheckOut(dto, adminUser);
   }
 
@@ -64,9 +68,23 @@ export class AttendanceController {
     return this.attendanceService.findMyHistory(query, user);
   }
 
+  /** State of the authenticated instructor's attendance for one session — null if none. */
+  @Get('me/session/:sessionId')
+  @CheckPolicies(ReadAttendanceRecordPolicy)
+  myStateForSession(
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.attendanceService.findMySessionState(sessionId, user);
+  }
+
   @Get('session/:sessionId')
   @CheckPolicies(ReadAttendanceRecordPolicy)
-  findBySession(@Param('sessionId') sessionId: string) {
+  async findBySession(
+    @Param('sessionId') sessionId: string,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    await this.userScopeService.ensureClassSessionInScope(user, sessionId);
     return this.attendanceService.findBySession(sessionId);
   }
 

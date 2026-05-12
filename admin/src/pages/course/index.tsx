@@ -113,7 +113,6 @@ const CourseList = () => {
                 sortCol="createdAt"
                 className="mt-5"
                 query={{}}
-                populate={[{ path: 'departmentId', select: 'name' }]}
                 rowSelectionEnabled
                 onSelectionChange={setSelectedRecords}
                 bulkActions={[{ label: 'Delete Selected', icon: <IconTrash size={18} />, color: 'red', onClick: () => handleBulk() }]}

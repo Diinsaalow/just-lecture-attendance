@@ -47,3 +47,9 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+/** Each device id can be registered to at most one user. `sparse` so unset values aren't compared. */
+UserSchema.index(
+  { registeredDeviceId: 1 },
+  { unique: true, sparse: true },
+);

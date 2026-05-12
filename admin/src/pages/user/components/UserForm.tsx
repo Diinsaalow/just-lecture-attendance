@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -11,8 +12,17 @@ import FormInput from '../../../components/form/FormInput';
 import FormSelect from '../../../components/form/FormSelect';
 import { useCreateUserMutation, useUpdateUserMutation } from '../../../store/api/userApi';
 import { useGetAllRolesQuery } from '../../../store/api/roleApi';
+import { useGetAllFacultiesQuery } from '../../../store/api/facultyApi';
 import { IUser, IRole } from '../../../types/auth';
 import { useDebounce } from '../../../hooks/useDebounce';
+import type { IRootState } from '../../../store';
+
+function isSuperAdminUser(user: IUser | null | undefined): boolean {
+    if (!user) return false;
+    const r = user.role;
+    const name = typeof r === 'string' ? r : (r as { name?: string })?.name;
+    return name?.toLowerCase() === 'super-admin';
+}
 
 // ---------------------- Schema & Types ----------------------
 const userSchema = z
@@ -30,6 +40,9 @@ const userSchema = z
         phone: z.string().optional().nullable(),
         status: z.enum(['active', 'inactive', 'suspended']).optional(),
         role: z.union([z.string().regex(/^[0-9a-fA-F]{24}$/, 'Role must be a valid MongoDB ID'), z.literal(''), z.null()]).optional(),
+        facultyId: z
+            .union([z.string().regex(/^[0-9a-fA-F]{24}$/, 'Faculty must be a valid MongoDB ID'), z.literal('')])
+            .optional(),
     })
     .refine((data) => !data.password || data.password === data.password_confirmation, {
         message: 'Passwords do not match',
@@ -57,6 +70,9 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
 
     const isEditMode = Boolean(userToEdit);
 
+    const currentUser = useSelector((s: IRootState) => s.auth.user) as IUser | null;
+    const superAdmin = isSuperAdminUser(currentUser);
+
     // Fetch roles from API with remote search using debounced query
     const debouncedRoleQuery = useDebounce(roleQuery, 300);
     const { data: rolesData, isLoading: rolesLoading } = useGetAllRolesQuery({
@@ -68,6 +84,15 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
         _id: role._id,
         name: role.name,
     }));
+
+    const { data: facultiesData } = useGetAllFacultiesQuery(
+        { query: {}, options: { limit: 200, page: 1 } },
+        { skip: !superAdmin },
+    );
+    const facultyOptions = [
+        { value: '', label: '— Auto / Default —' },
+        ...(facultiesData?.docs ?? []).map((f) => ({ value: f._id, label: f.name })),
+    ];
 
     const {
         control,
@@ -88,6 +113,7 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
             phone: '',
             status: 'active',
             role: '',
+            facultyId: '',
         },
         mode: 'onChange',
     });
@@ -203,6 +229,7 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
                     role: string;
                     status?: 'active' | 'inactive' | 'suspended';
                     phone?: string;
+                    facultyId?: string;
                 } = {
                     firstName: data.firstName.trim(),
                     lastName: data.lastName.trim(),
@@ -216,6 +243,9 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
                 const phoneTrim = data.phone?.trim();
                 if (phoneTrim) {
                     createBody.phone = phoneTrim;
+                }
+                if (superAdmin && data.facultyId) {
+                    createBody.facultyId = data.facultyId;
                 }
 
                 await createUser(createBody as any).unwrap();
@@ -237,6 +267,9 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
                 if (pwd) {
                     patch.password = pwd;
                 }
+                if (superAdmin && data.facultyId) {
+                    patch.facultyId = data.facultyId;
+                }
 
                 await updateUser({ id: userToEdit._id, data: patch as any }).unwrap();
                 toast.success('User updated successfully');
@@ -257,6 +290,14 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
 
     useEffect(() => {
         if (userToEdit) {
+            const fid =
+                userToEdit.facultyId &&
+                typeof userToEdit.facultyId === 'object' &&
+                '_id' in (userToEdit.facultyId as object)
+                    ? (userToEdit.facultyId as unknown as { _id: string })._id
+                    : typeof userToEdit.facultyId === 'string'
+                      ? userToEdit.facultyId
+                      : '';
             const formData: any = {
                 firstName: userToEdit.firstName || '',
                 lastName: userToEdit.lastName || '',
@@ -265,6 +306,7 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
                 password_confirmation: '',
                 phone: userToEdit.phone || '',
                 status: userToEdit.status || 'active',
+                facultyId: fid,
             };
 
             // Set role
@@ -435,6 +477,25 @@ const UserForm: React.FC<UserFormProps> = ({ userToEdit, onClose }) => {
                     />
                 )}
             />
+
+            {superAdmin && (
+                <Controller
+                    name="facultyId"
+                    control={control}
+                    render={({ field }) => (
+                        <FormSelect
+                            id="user_facultyId"
+                            label="Faculty"
+                            error={errors.facultyId?.message}
+                            disabled={isLoading}
+                            options={facultyOptions}
+                            value={field.value || ''}
+                            onChange={(value: string) => field.onChange(value)}
+                            onBlur={() => {}}
+                        />
+                    )}
+                />
+            )}
 
             <Controller
                 name="status"

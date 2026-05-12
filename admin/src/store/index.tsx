@@ -43,6 +43,9 @@ import { recipientApi } from './api/recipientApi';
 import { recipientGroupApi } from './api/recipientGroupApi';
 import { smsMessageApi } from './api/smsMessageApi';
 import { attendanceSettingsApi } from './api/attendanceSettingsApi';
+import { submissionApi } from './api/submissionApi';
+import { auditLogApi } from './api/auditLogApi';
+import { lectureReportsApi } from './api/lectureReportsApi';
 
 const rootReducer = combineReducers({
     themeConfig: themeConfigSlice,
@@ -88,6 +91,9 @@ const rootReducer = combineReducers({
     [recipientGroupApi.reducerPath]: recipientGroupApi.reducer,
     [smsMessageApi.reducerPath]: smsMessageApi.reducer,
     [attendanceSettingsApi.reducerPath]: attendanceSettingsApi.reducer,
+    [submissionApi.reducerPath]: submissionApi.reducer,
+    [auditLogApi.reducerPath]: auditLogApi.reducer,
+    [lectureReportsApi.reducerPath]: lectureReportsApi.reducer,
 });
 
 export const store = configureStore({
@@ -147,6 +153,9 @@ export const store = configureStore({
             recipientGroupApi.middleware,
             smsMessageApi.middleware,
             attendanceSettingsApi.middleware,
+            submissionApi.middleware,
+            auditLogApi.middleware,
+            lectureReportsApi.middleware,
         ),
     devTools: process.env.NODE_ENV !== 'production',
 });

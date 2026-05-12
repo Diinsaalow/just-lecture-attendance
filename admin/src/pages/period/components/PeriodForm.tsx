@@ -22,8 +22,16 @@ import type { IPeriod } from '../../../types/period';
 import { formatJamhuriyaUsername } from '../../../utils/jamhuriyaUsername';
 
 const WEEKDAY_OPTIONS = (
-    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
+    ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const
 ).map((d) => ({ value: d, label: d }));
+
+const HHMM_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function hhmmToMinutes(value: string): number {
+    const m = HHMM_REGEX.exec(value);
+    if (!m) return NaN;
+    return Number(m[1]) * 60 + Number(m[2]);
+}
 
 function lecturerSelectLabel(u: IUser): string {
     const full = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
@@ -79,19 +87,42 @@ function hallIdOfPeriod(p: IPeriod): string {
     return typeof p.hallId === 'string' ? p.hallId : p.hallId._id || '';
 }
 
-const schema = z.object({
-    departmentId: z.string().min(1, 'Department is required'),
-    classId: z.string().min(1, 'Class is required'),
-    courseId: z.string().min(1, 'Course is required'),
-    lecturerId: z.string().min(1, 'Lecturer is required'),
-    semesterId: z.string().min(1, 'Semester is required'),
-    day: z.string().min(1, 'Day is required'),
-    type: z.enum(['Lab', 'Theory']),
-    from: z.string().min(1, 'From is required'),
-    to: z.string().min(1, 'To is required'),
-    hallId: z.string().optional(),
-    status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
-});
+const VALID_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+const schema = z
+    .object({
+        departmentId: z.string().min(1, 'Department is required'),
+        classId: z.string().min(1, 'Class is required'),
+        courseId: z.string().min(1, 'Course is required'),
+        lecturerId: z.string().min(1, 'Lecturer is required'),
+        semesterId: z.string().min(1, 'Semester is required'),
+        day: z
+            .string()
+            .min(1, 'Day is required')
+            .refine((v) => VALID_DAYS.includes(v), 'Pick a valid weekday'),
+        type: z.enum(['Lab', 'Theory']),
+        from: z
+            .string()
+            .min(1, 'From is required')
+            .regex(HHMM_REGEX, 'From must be in HH:mm 24h format'),
+        to: z
+            .string()
+            .min(1, 'To is required')
+            .regex(HHMM_REGEX, 'To must be in HH:mm 24h format'),
+        hallId: z.string().optional(),
+        status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+    })
+    .superRefine((data, ctx) => {
+        const fromMin = hhmmToMinutes(data.from);
+        const toMin = hhmmToMinutes(data.to);
+        if (!Number.isNaN(fromMin) && !Number.isNaN(toMin) && fromMin >= toMin) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: '"To" must be after "From"',
+                path: ['to'],
+            });
+        }
+    });
 
 type FormData = z.infer<typeof schema>;
 
@@ -237,7 +268,14 @@ const PeriodForm: React.FC<Props> = ({ itemToEdit, onClose }) => {
             onClose();
             reset();
         } catch (error: unknown) {
-            toast.error((error as { data?: { message?: string } })?.data?.message || 'Failed');
+            const e = error as { status?: number; data?: { message?: string | string[] } };
+            const raw = e?.data?.message;
+            const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+            if (e?.status === 409 && msg) {
+                toast.error(msg);
+            } else {
+                toast.error(msg || 'Failed');
+            }
         }
     };
 

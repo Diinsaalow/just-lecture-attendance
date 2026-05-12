@@ -26,6 +26,9 @@ const SUBJECTS_FOR_MATRIX: string[] = [
   Subject.Settings,
   Subject.AttendanceRecord,
   Subject.AbsenceSubmission,
+  Subject.BoundDevice,
+  Subject.AttendanceSettings,
+  Subject.AuditLog,
 ];
 
 const CRUD_MANAGE: Action[] = [

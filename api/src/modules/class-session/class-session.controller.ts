@@ -66,6 +66,31 @@ export class ClassSessionController {
     return this.classSessionService.findSemestersForGeneration(user, classId);
   }
 
+  /** Mobile: instructor's sessions for today (UTC). */
+  @Get('me/today')
+  @CheckPolicies(ReadClassSessionPolicy)
+  myToday(@CurrentUser() user: AuthUserPayload) {
+    return this.classSessionService.findMyToday(user);
+  }
+
+  /** Mobile: the currently checkable session for the instructor, or null. */
+  @Get('me/active')
+  @CheckPolicies(ReadClassSessionPolicy)
+  myActive(@CurrentUser() user: AuthUserPayload) {
+    return this.classSessionService.findMyActiveSession(user);
+  }
+
+  /** Mobile: instructor's sessions in the inclusive [from, to] range. */
+  @Get('me')
+  @CheckPolicies(ReadClassSessionPolicy)
+  myRange(
+    @CurrentUser() user: AuthUserPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.classSessionService.findMyRange(user, from, to);
+  }
+
   @Get()
   @CheckPolicies(ReadClassSessionPolicy)
   findAll(@Query() q: TableQueryDto, @CurrentUser() user: AuthUserPayload) {

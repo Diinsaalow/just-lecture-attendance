@@ -42,6 +42,16 @@ export class PeriodController {
     return this.periodService.findAllPaginated(q, user);
   }
 
+  /** Mobile: instructor's assigned periods (optionally filtered by semesterId). */
+  @Get('me')
+  @CheckPolicies(ReadPeriodPolicy)
+  findMine(
+    @CurrentUser() user: AuthUserPayload,
+    @Query('semesterId') semesterId?: string,
+  ) {
+    return this.periodService.findMine(user, semesterId);
+  }
+
   @Delete('bulk/delete')
   @HttpCode(HttpStatus.OK)
   @CheckPolicies(DeletePeriodPolicy)

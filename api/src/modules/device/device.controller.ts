@@ -16,12 +16,16 @@ import {
   DeleteBoundDevicePolicy,
   ReadBoundDevicePolicy,
 } from '../../common/casl/policies/access.policies';
+import { UserScopeService } from '../../common/casl/user-scope.service';
 import { DeviceService } from './device.service';
 import { RegisterDeviceDto } from './dto/register-device.dto';
 
 @Controller('devices')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly userScopeService: UserScopeService,
+  ) {}
 
   /** Register or replace the authenticated instructor's device. */
   @Post('register')
@@ -41,11 +45,15 @@ export class DeviceController {
     return this.deviceService.getMyDevice(user.id);
   }
 
-  /** Admin: clear an instructor's registered device. */
+  /** Admin: clear an instructor's registered device — scoped to actor's faculty. */
   @Delete(':userId')
   @HttpCode(HttpStatus.OK)
   @CheckPolicies(DeleteBoundDevicePolicy)
-  clearDevice(@Param('userId') userId: string) {
+  async clearDevice(
+    @Param('userId') userId: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ) {
+    await this.userScopeService.ensureUserInScope(actor, userId);
     return this.deviceService.clearDevice(userId);
   }
 }

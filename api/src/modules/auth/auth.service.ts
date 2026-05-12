@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Types } from 'mongoose';
 import {
@@ -39,20 +35,9 @@ export class AuthService {
 
   async register(
     dto: RegisterDto,
-    adminRegistrationKey?: string,
   ): Promise<{ accessToken: string; user: AuthPublicUser }> {
-    const role = dto.role ?? UserRole.INSTRUCTOR;
-
-    const privilegedRoles = [UserRole.SUPER_ADMIN];
-    if (privilegedRoles.includes(role)) {
-      if (process.env.ALLOW_ADMIN_REGISTER !== 'true') {
-        throw new ForbiddenException('Admin self-registration is disabled');
-      }
-      const expected = process.env.ADMIN_REGISTRATION_KEY;
-      if (!expected || adminRegistrationKey !== expected) {
-        throw new ForbiddenException('Invalid admin registration key');
-      }
-    }
+    /** Public registration is hard-locked to instructor — privileged roles are seeded or admin-created. */
+    const role = UserRole.INSTRUCTOR;
 
     const roleId = await this.rolesService.findIdByRoleName(role);
     const user = await this.usersService.registerWithPasscode({

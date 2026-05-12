@@ -10,15 +10,7 @@ interface UserDetailProps {
 const UserDetail: React.FC<UserDetailProps> = ({ userId }) => {
     // Convert number ID to string for RTK Query, or skip if no userId
     const userIdString = userId ? (userId as unknown as string) : '';
-    const { data: user, isLoading } = useGetUserByIdQuery(
-        {
-            id: userIdString,
-            params: {
-                populate: [{ path: 'role', dir: 'roles', select: 'name ability' }],
-            },
-        },
-        { skip: !userIdString }
-    );
+    const { data: user, isLoading } = useGetUserByIdQuery(userIdString, { skip: !userIdString });
 
     if (isLoading) {
         return <UserDetailSkeleton />;

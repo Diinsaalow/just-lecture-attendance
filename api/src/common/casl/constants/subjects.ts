@@ -21,6 +21,7 @@ export const Subject = {
   AbsenceSubmission: 'AbsenceSubmission',
   BoundDevice: 'BoundDevice',
   AttendanceSettings: 'AttendanceSettings',
+  AuditLog: 'AuditLog',
 } as const;
 
 export type SubjectType = (typeof Subject)[keyof typeof Subject];

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile/core/values/app_colors.dart';
 import 'package:mobile/modules/dashboard/controllers/profile_controller.dart';
+import 'package:mobile/core/auth/auth_controller.dart';
 import 'package:mobile/modules/dashboard/models/lecturer_profile.dart';
 
 class ProfileView extends GetView<ProfileController> {
@@ -208,7 +209,7 @@ class ProfileView extends GetView<ProfileController> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           title: const Text('Log out?'),
           content: const Text(
-            'You are not signed in to a real account yet. This is a demo action.',
+            'Are you sure you want to log out of your account?',
           ),
           actions: [
             TextButton(
@@ -222,17 +223,12 @@ class ProfileView extends GetView<ProfileController> {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: const Color(0xFFC24B4B),
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Signed out (demo) — no session was active.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                Get.find<AuthController>().logout();
               },
               child: const Text('Log out'),
             ),

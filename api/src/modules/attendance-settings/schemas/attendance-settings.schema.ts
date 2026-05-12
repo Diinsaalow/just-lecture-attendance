@@ -3,12 +3,27 @@ import { HydratedDocument } from 'mongoose';
 
 export type AttendanceSettingsDocument = HydratedDocument<AttendanceSettings>;
 
+/** Constant that identifies the singleton row. The unique index guarantees only one. */
+export const ATTENDANCE_SETTINGS_SINGLETON_KEY = 'global';
+
 /**
  * Singleton document storing attendance configuration.
  * Admins must configure all thresholds — no hardcoded defaults.
  */
 @Schema({ timestamps: true, collection: 'attendance_settings' })
 export class AttendanceSettings {
+  /**
+   * Hard-coded discriminator (always `'global'`). Backed by a unique index so
+   * the database itself prevents the creation of multiple settings rows.
+   */
+  @Prop({
+    type: String,
+    required: true,
+    unique: true,
+    default: ATTENDANCE_SETTINGS_SINGLETON_KEY,
+  })
+  singletonKey: string;
+
   /** Minutes after scheduled start before a check-in is flagged as LATE. */
   @Prop({ type: Number, required: true })
   lateThresholdMinutes: number;
