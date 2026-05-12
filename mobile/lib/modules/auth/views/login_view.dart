@@ -9,149 +9,95 @@ class LoginView extends GetView<LoginController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
           child: Form(
             key: controller.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 60),
                 Center(
                   child: Container(
-                    height: 100,
-                    width: 100,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.05),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.school_rounded,
-                      size: 60,
+                      Icons.school_outlined,
+                      size: 80,
                       color: AppColors.primary,
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
                 const Center(
                   child: Text(
-                    'Lecture Attendance',
+                    'Welcome Back',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1A1C1E),
+                      letterSpacing: -1,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Login to manage your sessions',
+                    'Sign in to your instructor account',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                     ),
                   ),
                 ),
-                const SizedBox(height: 48),
-                const Text(
-                  'Username',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                const SizedBox(height: 60),
+                _buildLabel('Username or ID'),
                 const SizedBox(height: 8),
-                TextFormField(
+                _buildTextField(
                   controller: controller.usernameController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter your staff ID or username',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your username';
-                    }
-                    return null;
-                  },
+                  hint: 'Enter your staff ID',
+                  icon: Icons.person_outline,
+                  validator: (value) => value == null || value.isEmpty ? 'Please enter your username' : null,
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Passcode',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                _buildLabel('Passcode'),
                 const SizedBox(height: 8),
-                Obx(() => TextFormField(
+                Obx(() => _buildTextField(
                   controller: controller.passcodeController,
+                  hint: 'Enter your secure passcode',
+                  icon: Icons.lock_outline,
+                  isPassword: true,
                   obscureText: controller.obscureText.value,
-                  decoration: InputDecoration(
-                    hintText: 'Enter your 8-16 digit passcode',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        controller.obscureText.value
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                      ),
-                      onPressed: controller.toggleObscureText,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                  ),
+                  onToggleVisibility: controller.toggleObscureText,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your passcode';
-                    }
-                    if (value.length < 8) {
-                      return 'Passcode must be at least 8 characters';
-                    }
+                    if (value == null || value.isEmpty) return 'Please enter your passcode';
+                    if (value.length < 8) return 'Passcode must be at least 8 characters';
                     return null;
                   },
                 )),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // Optional: Forgot password
-                    },
-                    child: const Text('Forgot Passcode?'),
-                  ),
-                ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 58,
                   child: Obx(() => ElevatedButton(
                     onPressed: controller.isLoading ? null : controller.login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary, // Using Green for Action
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                       elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     child: controller.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
-                            'Login',
+                            'Sign In',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -162,10 +108,11 @@ class LoginView extends GetView<LoginController> {
                 const SizedBox(height: 40),
                 const Center(
                   child: Text(
-                    '© 2024 JUST University',
+                    'JUST University Attendance System',
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -174,6 +121,63 @@ class LoginView extends GetView<LoginController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+        color: Color(0xFF1A1C1E),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? onToggleVisibility,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: Colors.grey[400],
+                  size: 20,
+                ),
+                onPressed: onToggleVisibility,
+              )
+            : null,
+        filled: true,
+        fillColor: const Color(0xFFF1F4F9),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 18),
+      ),
+      validator: validator,
     );
   }
 }

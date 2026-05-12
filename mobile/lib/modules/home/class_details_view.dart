@@ -9,10 +9,22 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary, size: 20),
+          onPressed: () => Get.back(),
+        ),
         title: Text(
           controller.lectureClass.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Color(0xFF1A1C1E),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
       ),
       body: Obx(() {
@@ -28,9 +40,13 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 const Text('Failed to load timetable'),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: controller.fetchWeeklyPeriods,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: const Text('Retry'),
                 ),
               ],
@@ -43,11 +59,11 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
+                Icon(Icons.calendar_month_outlined, size: 80, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 Text(
-                  'No sessions scheduled for this class',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  'No sessions scheduled',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -55,7 +71,7 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: controller.sortedDays.length,
           itemBuilder: (context, index) {
             final day = controller.sortedDays[index];
@@ -65,14 +81,14 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
                   child: Row(
                     children: [
                       Container(
                         width: 4,
-                        height: 20,
+                        height: 16,
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.secondary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -80,35 +96,34 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
                       Text(
                         day.toUpperCase(),
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 1.2,
-                          color: AppColors.secondary,
+                          letterSpacing: 1.5,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                ...periods.map((period) => Card(
+                ...periods.map((period) => Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey[200]!),
+                        border: Border.all(color: Colors.grey[200]!),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: const Color(0xFFF1F4F9),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     period.type.toUpperCase(),
@@ -120,52 +135,52 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
                                   ),
                                 ),
                                 const Spacer(),
-                                const Icon(Icons.access_time,
-                                    size: 14, color: Colors.grey),
-                                const SizedBox(width: 4),
+                                Icon(Icons.access_time_filled, size: 16, color: Colors.grey[400]),
+                                const SizedBox(width: 6),
                                 Text(
                                   period.timeRange,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
+                                    color: Color(0xFF1A1C1E),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             Text(
                               period.courseName,
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 17,
                                 fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A1C1E),
+                                height: 1.3,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Icon(Icons.location_on_outlined,
-                                    size: 16, color: Colors.grey),
-                                const SizedBox(width: 4),
+                                Icon(Icons.location_on, size: 16, color: Colors.grey[400]),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     period.location,
-                                    style: const TextStyle(
-                                        color: Colors.grey, fontSize: 14),
+                                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                                   ),
                                 ),
                                 Container(
-                                  width: 8,
-                                  height: 8,
+                                  width: 6,
+                                  height: 6,
                                   decoration: const BoxDecoration(
-                                    color: Colors.green,
+                                    color: AppColors.primary,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 6),
                                 Text(
                                   period.status.toUpperCase(),
                                   style: const TextStyle(
-                                    color: Colors.green,
+                                    color: AppColors.primary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -176,7 +191,6 @@ class ClassDetailsView extends GetView<ClassDetailsController> {
                         ),
                       ),
                     )),
-                const SizedBox(height: 12),
               ],
             );
           },

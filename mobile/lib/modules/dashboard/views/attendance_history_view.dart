@@ -10,356 +10,171 @@ class AttendanceHistoryView extends GetView<AttendanceHistoryController> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = AppColors.primary;
-    final theme = Theme.of(context);
-    final surface = theme.colorScheme.surface;
-    final onSurface = theme.colorScheme.onSurface;
-
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: primary,
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
-          'Attendance History',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+          'History',
+          style: TextStyle(
+            color: Color(0xFF1A1C1E),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list_outlined),
-            tooltip: 'Filter',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Filters will connect to the API later.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onPressed: () {},
+            icon: const Icon(Icons.filter_list, color: AppColors.primary),
           ),
         ],
       ),
-      body: Obx(
-        () => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      body: Obx(() {
+        return ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            _SummaryStrip(
-              sessions: controller.sessionsThisWeek,
-              avgPercent: controller.avgAttendancePercent,
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Recent sessions',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: primary,
-                fontWeight: FontWeight.w800,
+            _buildSummaryStrip(context),
+            const SizedBox(height: 24),
+            const Text(
+              'Recent Activity',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1C1E),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             if (controller.records.isEmpty)
-              _EmptyState(
-                onSurface: onSurface,
-                primary: primary,
-                secondary: AppColors.secondary,
-              )
+              _buildEmptyState()
             else
-              ...controller.records.map(
-                (r) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _AttendanceRecordCard(
-                    record: r,
-                    primary: primary,
-                    surface: surface,
-                    onSurface: onSurface,
-                    theme: theme,
-                  ),
-                ),
-              ),
+              ...controller.records.map((r) => _buildRecordCard(r)),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
-}
 
-class _SummaryStrip extends StatelessWidget {
-  const _SummaryStrip({required this.sessions, required this.avgPercent});
-
-  final int sessions;
-  final int avgPercent;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = AppColors.primary;
-    final border = primary.withValues(alpha: 0.14);
-
+  Widget _buildSummaryStrip(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: border, width: 0.8),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _StatBadge(
-              label: 'This week',
-              value: '$sessions',
-              sublabel: 'sessions',
+          _buildSummaryItem('Weekly Sessions', '${controller.sessionsThisWeek}', Icons.calendar_today),
+          Container(width: 1, height: 40, color: Colors.white24),
+          _buildSummaryItem('Avg. Attendance', '${controller.avgAttendancePercent}%', Icons.analytics_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value, IconData icon) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white70, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Container(
-            width: 1,
-            height: 36,
-            color: border,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _StatBadge(
-              label: 'Avg. attendance',
-              value: sessions == 0 && avgPercent == 0 ? '—' : '$avgPercent%',
-              sublabel: sessions == 0 && avgPercent == 0 ? 'no data' : 'rolled up',
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 11,
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class _StatBadge extends StatelessWidget {
-  const _StatBadge({
-    required this.label,
-    required this.value,
-    required this.sublabel,
-  });
-
-  final String label;
-  final String value;
-  final String sublabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = AppColors.primary;
-    final green = AppColors.secondary;
-
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 40,
-          decoration: BoxDecoration(
-            color: green.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: primary.withValues(alpha: 0.60),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              Text(
-                sublabel,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: green.withValues(alpha: 0.95),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.onSurface,
-    required this.primary,
-    required this.secondary,
-  });
-
-  final Color onSurface;
-  final Color primary;
-  final Color secondary;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildRecordCard(AttendanceRecord record) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: primary.withValues(alpha: 0.12)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.event_busy_outlined,
-            size: 48,
-            color: secondary.withValues(alpha: 0.9),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No attendance yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: onSurface,
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Completed session records will appear here.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: onSurface.withValues(alpha: 0.70),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceRecordCard extends StatelessWidget {
-  const _AttendanceRecordCard({
-    required this.record,
-    required this.primary,
-    required this.surface,
-    required this.onSurface,
-    required this.theme,
-  });
-
-  final AttendanceRecord record;
-  final Color primary;
-  final Color surface;
-  final Color onSurface;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = primary.withValues(alpha: 0.16);
-    const radius = 8.0;
-    final secondary = AppColors.secondary;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: borderColor, width: 0.8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              color: secondary.withValues(alpha: 0.9),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(radius),
-              ),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F4F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.class_outlined, color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         record.courseCode,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: primary,
-                          fontWeight: FontWeight.w800,
+                        style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         record.courseName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: onSurface,
-                          fontWeight: FontWeight.w700,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1A1C1E),
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${record.sessionDateLabel} • ${record.timeLabel}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ],
                   ),
                 ),
-                _StatusChip(
-                  status: record.status,
-                  primary: primary,
-                  secondary: secondary,
-                ),
               ],
             ),
           ),
-          Container(height: 1, color: borderColor),
+          const Divider(height: 1, color: Color(0xFFF1F4F9)),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 16,
-                      color: primary.withValues(alpha: 0.55),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${record.sessionDateLabel} · ${record.timeLabel}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: onSurface.withValues(alpha: 0.88),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: secondary.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: secondary.withValues(alpha: 0.40),
-                      width: 0.7,
-                    ),
-                  ),
-                  child: Text(
-                    'Present ${record.presentCount} / ${record.totalCount} · ${record.percent}%',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: secondary,
-                      fontWeight: FontWeight.w800,
-                    ),
+                _buildStatusChip(record.status),
+                const Spacer(),
+                Text(
+                  '${record.percent}% Attendance',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -369,52 +184,37 @@ class _AttendanceRecordCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.status,
-    required this.primary,
-    required this.secondary,
-  });
-
-  final AttendanceStatus status;
-  final Color primary;
-  final Color secondary;
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, bg, fg) = switch (status) {
-      AttendanceStatus.completed => (
-        'Completed',
-        secondary.withValues(alpha: 0.20),
-        secondary,
-      ),
-      AttendanceStatus.draft => (
-        'Draft',
-        primary.withValues(alpha: 0.10),
-        primary.withValues(alpha: 0.90),
-      ),
-    };
-
+  Widget _buildStatusChip(AttendanceStatus status) {
+    final isCompleted = status == AttendanceStatus.completed;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: (status == AttendanceStatus.completed ? secondary : primary)
-              .withValues(alpha: 0.35),
-          width: 0.7,
-        ),
+        color: isCompleted ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: fg,
-          fontWeight: FontWeight.w800,
+        isCompleted ? 'Completed' : 'Draft',
+        style: TextStyle(
+          color: isCompleted ? Colors.green[700] : Colors.orange[700],
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Column(
+      children: [
+        const SizedBox(height: 60),
+        Icon(Icons.history_outlined, size: 80, color: Colors.grey[300]),
+        const SizedBox(height: 16),
+        const Text(
+          'No history available yet',
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+      ],
     );
   }
 }

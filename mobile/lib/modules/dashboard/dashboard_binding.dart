@@ -5,12 +5,14 @@ import 'package:mobile/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:mobile/modules/dashboard/controllers/dashboard_shell_controller.dart';
 import 'package:mobile/modules/dashboard/controllers/profile_controller.dart';
 import 'package:mobile/modules/home/home_controller.dart';
+import 'package:mobile/modules/sessions/controllers/today_sessions_controller.dart';
 
 class DashboardBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<DashboardController>(() => DashboardController());
     Get.lazyPut<HomeController>(() => HomeController());
+    Get.lazyPut<TodaySessionsController>(() => TodaySessionsController());
     Get.lazyPut<DashboardShellController>(() => DashboardShellController());
     Get.lazyPut<AttendanceHistoryController>(() => AttendanceHistoryController());
     Get.lazyPut<AbsenceRequestController>(() => AbsenceRequestController());

@@ -6,6 +6,7 @@ import 'package:mobile/modules/dashboard/views/absence_request_view.dart';
 import 'package:mobile/modules/dashboard/views/attendance_history_view.dart';
 import 'package:mobile/modules/dashboard/views/dashboard_view.dart';
 import 'package:mobile/modules/dashboard/views/profile_view.dart';
+import 'package:mobile/modules/sessions/views/today_sessions_view.dart';
 import 'package:mobile/modules/home/home_view.dart';
 
 class DashboardShellView extends GetView<DashboardShellController> {
@@ -14,7 +15,8 @@ class DashboardShellView extends GetView<DashboardShellController> {
   @override
   Widget build(BuildContext context) {
     final tabs = <Widget>[
-      const HomeView(),
+      const TodaySessionsView(),
+      HomeView(),
       const AttendanceHistoryView(),
       const AbsenceRequestView(),
       const ProfileView(),
@@ -46,22 +48,21 @@ class _BottomPillNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = const <_NavItem>[
-      _NavItem(label: 'Home', icon: Icons.home_outlined),
+      _NavItem(label: 'Today', icon: Icons.timer_outlined),
+      _NavItem(label: 'Classes', icon: Icons.school_outlined),
       _NavItem(label: 'Attendance', icon: Icons.calendar_today_outlined),
       _NavItem(label: 'Absence', icon: Icons.assignment_late_outlined),
       _NavItem(label: 'Profile', icon: Icons.person_outline),
     ];
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(color: AppColors.primary.withValues(alpha: 0.10)),
-          ),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(items.length, (i) {
@@ -95,45 +96,38 @@ class _BottomPillNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = AppColors.primary;
-    final inactiveColor = AppColors.primary.withValues(alpha: 0.55);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.symmetric(
-            horizontal: selected ? 14 : 10,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? pillColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 24,
-                color: selected ? Colors.white : inactiveColor,
-              ),
-              if (selected) ...[
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: selected ? 16 : 8,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: selected ? Colors.white : Colors.black54,
+              size: 24,
+            ),
+            if (selected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

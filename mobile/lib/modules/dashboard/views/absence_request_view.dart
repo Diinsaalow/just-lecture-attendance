@@ -11,86 +11,42 @@ class AbsenceRequestView extends GetView<AbsenceRequestController> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = AppColors.primary;
-    final surface = Theme.of(context).colorScheme.surface;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    const secondary = AppColors.secondary;
-
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: primary,
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Absence Requests',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Color(0xFF1A1C1E),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('New request'),
         onPressed: () {
           controller.resetForm();
-          _NewRequestSheet.show(context, controller);
+          _showNewRequestSheet(context);
         },
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('New Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Obx(
-              () => SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(
-                    value: 0,
-                    label: Text('Pending'),
-                    icon: Icon(Icons.hourglass_top_outlined, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: 1,
-                    label: Text('Approved'),
-                    icon: Icon(Icons.check_circle_outline, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: 2,
-                    label: Text('Rejected'),
-                    icon: Icon(Icons.cancel_outlined, size: 16),
-                  ),
-                ],
-                selected: {controller.segmentIndex.value},
-                onSelectionChanged: (s) {
-                  if (s.isNotEmpty) controller.segmentIndex.value = s.first;
-                },
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  side: WidgetStateProperty.all(
-                    BorderSide(color: primary.withValues(alpha: 0.25)),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildSegmentedTab(),
           Expanded(
             child: Obx(() {
               final list = controller.filteredRequests;
-              if (list.isEmpty) {
-                return _EmptyList(secondary: secondary, onSurface: onSurface);
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+              if (list.isEmpty) return _buildEmptyState();
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
                 itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  return _RequestCard(
-                    request: list[i],
-                    primary: primary,
-                    surface: surface,
-                    onSurface: onSurface,
-                  );
-                },
+                itemBuilder: (context, i) => _buildRequestCard(list[i]),
               );
             }),
           ),
@@ -98,162 +54,125 @@ class AbsenceRequestView extends GetView<AbsenceRequestController> {
       ),
     );
   }
-}
 
-class _EmptyList extends StatelessWidget {
-  const _EmptyList({required this.secondary, required this.onSurface});
+  Widget _buildSegmentedTab() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Obx(() => Row(
+            children: [
+              _buildTabItem(0, 'Pending'),
+              _buildTabItem(1, 'Approved'),
+              _buildTabItem(2, 'Rejected'),
+            ],
+          )),
+    );
+  }
 
-  final Color secondary;
-  final Color onSurface;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        const SizedBox(height: 32),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.assignment_late_outlined,
-                  size: 44,
-                  color: secondary.withValues(alpha: 0.85),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Nothing in this tab',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: onSurface,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Create a new request with the button below.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: onSurface.withValues(alpha: 0.70),
-                  ),
-                ),
-              ],
+  Widget _buildTabItem(int index, String label) {
+    final isSelected = controller.segmentIndex.value == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => controller.segmentIndex.value = index,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : Colors.grey[600],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
-}
 
-class _RequestCard extends StatelessWidget {
-  const _RequestCard({
-    required this.request,
-    required this.primary,
-    required this.surface,
-    required this.onSurface,
-  });
-
-  final AbsenceRequest request;
-  final Color primary;
-  final Color surface;
-  final Color onSurface;
-
-  @override
-  Widget build(BuildContext context) {
-    final border = primary.withValues(alpha: 0.16);
-    const r = 8.0;
-    const secondary = AppColors.secondary;
-
+  Widget _buildRequestCard(AbsenceRequest request) {
+    final statusColor = _getStatusColor(request.status);
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(r),
-        border: Border.all(color: border, width: 0.8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              color: _accentForStatus(request.status).withValues(alpha: 0.85),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(r),
-              ),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request.courseCode,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: primary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        request.courseName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _StatusPill(
-                  status: request.status,
-                  primary: primary,
-                  secondary: secondary,
-                ),
-              ],
-            ),
-          ),
-          Container(height: 1, color: border),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.date_range_outlined,
-                      size: 16,
-                      color: primary.withValues(alpha: 0.55),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       child: Text(
-                        '${request.startDateLabel} – ${request.endDateLabel}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: onSurface.withValues(alpha: 0.90),
-                          fontWeight: FontWeight.w600,
+                        request.status.name.toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+                    Text(
+                      '${request.startDateLabel}',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 16),
+                Text(
+                  request.courseName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1C1E),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   request.reasonSnippet,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: onSurface.withValues(alpha: 0.68),
-                    height: 1.3,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F4F9)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.date_range_outlined, size: 16, color: Colors.grey[400]),
+                const SizedBox(width: 8),
+                Text(
+                  'Ends: ${request.endDateLabel}',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                ),
+                const Spacer(),
+                const Text(
+                  'View Details',
+                  style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -263,272 +182,150 @@ class _RequestCard extends StatelessWidget {
     );
   }
 
-  static Color _accentForStatus(AbsenceRequestStatus s) {
-    return switch (s) {
-      AbsenceRequestStatus.pending => AppColors.primary,
-      AbsenceRequestStatus.approved => AppColors.secondary,
-      AbsenceRequestStatus.rejected => const Color(0xFFC24B4B),
-    };
+  Color _getStatusColor(AbsenceRequestStatus status) {
+    switch (status) {
+      case AbsenceRequestStatus.pending: return Colors.orange;
+      case AbsenceRequestStatus.approved: return Colors.green;
+      case AbsenceRequestStatus.rejected: return Colors.red;
+    }
   }
-}
 
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.status,
-    required this.primary,
-    required this.secondary,
-  });
-
-  final AbsenceRequestStatus status;
-  final Color primary;
-  final Color secondary;
-
-  @override
-  Widget build(BuildContext context) {
-    final (text, border, textColor, bg) = switch (status) {
-      AbsenceRequestStatus.pending => (
-        'Pending',
-        primary.withValues(alpha: 0.30),
-        primary,
-        primary.withValues(alpha: 0.10),
-      ),
-      AbsenceRequestStatus.approved => (
-        'Approved',
-        secondary.withValues(alpha: 0.45),
-        secondary,
-        secondary.withValues(alpha: 0.16),
-      ),
-      AbsenceRequestStatus.rejected => (
-        'Rejected',
-        const Color(0xFFC24B4B).withValues(alpha: 0.50),
-        const Color(0xFFC24B4B),
-        const Color(0xFFC24B4B).withValues(alpha: 0.10),
-      ),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: border, width: 0.7),
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w800,
-        ),
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.assignment_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          const Text('No requests found', style: TextStyle(color: Colors.grey)),
+        ],
       ),
     );
   }
-}
 
-class _NewRequestSheet {
-  static Future<void> show(BuildContext context, AbsenceRequestController c) {
-    return showModalBottomSheet<void>(
+  void _showNewRequestSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 8,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'New absence request',
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Dummy form — no network. Fields map cleanly to a future API.',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      ctx,
-                    ).colorScheme.onSurface.withValues(alpha: 0.65),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Obx(
-                  () => InputDecorator(
-                    decoration: _fieldDecoration('Course', AppColors.primary),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<CourseOption>(
-                        isExpanded: true,
-                        isDense: true,
-                        value: c.selectedCourse.value,
-                        items: c.courseOptions
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(
-                                  e.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) => c.selectedCourse.value = v,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Obx(
-                  () => Row(
-                    children: [
-                      Expanded(
-                        child: _DateTile(
-                          label: 'Start date',
-                          value: c.formatDate(c.startDate.value),
-                          onTap: () async {
-                            final now = DateTime.now();
-                            final d = await showDatePicker(
-                              context: ctx,
-                              initialDate: c.startDate.value ?? now,
-                              firstDate: DateTime(now.year - 1),
-                              lastDate: DateTime(now.year + 2),
-                            );
-                            if (d != null) c.startDate.value = d;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _DateTile(
-                          label: 'End date',
-                          value: c.formatDate(c.endDate.value),
-                          onTap: () async {
-                            final now = DateTime.now();
-                            final d = await showDatePicker(
-                              context: ctx,
-                              initialDate:
-                                  c.endDate.value ?? c.startDate.value ?? now,
-                              firstDate: DateTime(now.year - 1),
-                              lastDate: DateTime(now.year + 2),
-                            );
-                            if (d != null) c.endDate.value = d;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: c.reasonController,
-                  minLines: 2,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.done,
-                  decoration: _fieldDecoration('Reason', AppColors.primary)
-                      .copyWith(
-                        alignLabelWithHint: true,
-                        hintText: 'Explain your absence (short summary)',
-                      ),
-                ),
-                const SizedBox(height: 8),
-                const SizedBox(height: 18),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: c.submitNewRequest,
-                  child: const Text('Submit request'),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  static InputDecoration _fieldDecoration(String label, Color primary) {
-    return InputDecoration(
-      labelText: label,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: primary.withValues(alpha: 0.30)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: primary.withValues(alpha: 0.25)),
-      ),
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      builder: (context) => _NewRequestForm(controller: controller),
     );
   }
 }
 
-class _DateTile extends StatelessWidget {
-  const _DateTile({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onTap;
+class _NewRequestForm extends StatelessWidget {
+  final AbsenceRequestController controller;
+  const _NewRequestForm({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    final primary = AppColors.primary;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: primary.withValues(alpha: 0.25)),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 24),
+          const Text('Submit Absence Request', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          _buildLabel('Select Course'),
+          const SizedBox(height: 8),
+          Obx(() => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(color: const Color(0xFFF1F4F9), borderRadius: BorderRadius.circular(16)),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<CourseOption>(
+                    isExpanded: true,
+                    value: controller.selectedCourse.value,
+                    items: controller.courseOptions.map((e) => DropdownMenuItem(value: e, child: Text(e.label))).toList(),
+                    onChanged: (v) => controller.selectedCourse.value = v,
+                  ),
+                ),
+              )),
+          const SizedBox(height: 20),
+          Row(
             children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: primary.withValues(alpha: 0.75),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Expanded(child: _buildDateInput(context, 'Start Date', controller.startDate)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildDateInput(context, 'End Date', controller.endDate)),
             ],
           ),
-        ),
+          const SizedBox(height: 20),
+          _buildLabel('Reason'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller.reasonController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: 'Enter reason for absence...',
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+              filled: true,
+              fillColor: const Color(0xFFF1F4F9),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () {
+                controller.submitNewRequest();
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('Submit Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A1C1E)));
+  }
+
+  Widget _buildDateInput(BuildContext context, String label, Rx<DateTime?> dateRx) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
+            if (d != null) dateRx.value = d;
+          },
+          child: Obx(() => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(color: const Color(0xFFF1F4F9), borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 16, color: Colors.grey[400]),
+                    const SizedBox(width: 8),
+                    Text(
+                      dateRx.value != null ? "${dateRx.value!.day}/${dateRx.value!.month}/${dateRx.value!.year}" : "Select Date",
+                      style: TextStyle(color: dateRx.value != null ? Colors.black87 : Colors.grey[400], fontSize: 14),
+                    ),
+                  ],
+                ),
+              )),
+        ),
+      ],
     );
   }
 }

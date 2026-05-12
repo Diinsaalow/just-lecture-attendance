@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  /// Primary: #1e4a93
-  static const Color primary = Color(0xFF1E4A93);
+  /// Primary: Deep Green
+  static const Color primary = Color(0xFF06402B);
 
-  /// Secondary: #16b367
-  static const Color secondary = Color(0xFF16B367);
+  /// Secondary: Golden/Mustard
+  static const Color secondary = Color(0xFFC69242);
 
-  /// Dark Background: #121212
+  /// Surface: Off-white/Light gray
+  static const Color surface = Color(0xFFF8F9FA);
+
+  /// Dark Background
   static const Color darkBackground = Color(0xFF121212);
 
   /// Gray Text: #A0A0A0
-  static const Color grayText = Color(0xFFA0A0A0);
+  static const Color grayText = Color(0xFF757575);
 }
 
