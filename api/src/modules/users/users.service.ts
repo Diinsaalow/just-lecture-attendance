@@ -315,6 +315,18 @@ export class UsersService {
     };
   }
 
+  async findByIdForProfile(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    return this.userModel
+      .findById(id)
+      .populate('role', 'name')
+      .populate('facultyId', 'name')
+      .lean()
+      .exec();
+  }
+
   async verifyPasscode(plain: string, passcodeHash: string): Promise<boolean> {
     return bcrypt.compare(plain, passcodeHash);
   }

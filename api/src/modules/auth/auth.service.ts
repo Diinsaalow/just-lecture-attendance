@@ -16,13 +16,20 @@ export type AuthPublicUser = {
   id: string;
   username: string;
   role: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  facultyId?: string;
+  facultyName?: string;
+  registeredDeviceId?: string;
   abilities: Array<{
     action: string | string[];
     subject: string;
     fields?: string[];
     condition?: Record<string, unknown>;
   }>;
-  facultyId?: string;
 };
 
 @Injectable()
@@ -91,11 +98,53 @@ export class AuthService {
   async getAuthenticatedProfile(
     userId: string,
   ): Promise<AuthPublicUser | null> {
-    const u = await this.usersService.findActiveByIdForAuth(userId);
-    if (!u) {
+    const user = await this.usersService.findByIdForProfile(userId);
+    if (!user) {
       return null;
     }
-    return this.toPublicUserFromPayload(u);
+
+    const roleName =
+      typeof user.role === 'object' && user.role !== null && 'name' in user.role
+        ? (user.role as { name: string }).name
+        : '';
+
+    const facultyName =
+      typeof user.facultyId === 'object' &&
+      user.facultyId !== null &&
+      'name' in user.facultyId
+        ? (user.facultyId as { name: string }).name
+        : undefined;
+
+    const facultyId =
+      typeof user.facultyId === 'object' &&
+      user.facultyId !== null &&
+      '_id' in user.facultyId
+        ? String(user.facultyId._id)
+        : user.facultyId
+          ? String(user.facultyId)
+          : undefined;
+
+    const normalized = normalizeRoleName(roleName);
+    const roleEntity = await this.rolesService.findByName(roleName);
+    const abilities =
+      roleEntity?.ability && roleEntity.ability.length > 0
+        ? roleEntity.ability
+        : defaultAbilitiesForRole(normalized);
+
+    return {
+      id: String(user._id),
+      username: user.username,
+      role: roleName,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      status: user.status,
+      facultyId,
+      facultyName,
+      registeredDeviceId: user.registeredDeviceId,
+      abilities,
+    };
   }
 
   private async toPublicUser(

@@ -52,6 +52,12 @@ export class PeriodController {
     return this.periodService.findMine(user, semesterId);
   }
 
+  @Get('classes/me')
+  @CheckPolicies(ReadPeriodPolicy)
+  findAssignedClasses(@CurrentUser() user: AuthUserPayload) {
+    return this.periodService.findAssignedClasses(user);
+  }
+
   @Delete('bulk/delete')
   @HttpCode(HttpStatus.OK)
   @CheckPolicies(DeletePeriodPolicy)

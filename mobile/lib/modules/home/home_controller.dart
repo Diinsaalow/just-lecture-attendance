@@ -1,30 +1,37 @@
 import 'package:get/get.dart';
 
 import 'package:mobile/core/api/api_client.dart';
-import 'package:mobile/data/models/class_session_model.dart';
+import 'package:mobile/data/models/lecture_class_model.dart';
 
 class HomeController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
 
-  final sessions = <ClassSessionModel>[].obs;
+  final assignedClasses = <LectureClassModel>[].obs;
   final isLoading = false.obs;
+  final hasError = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    fetchTodaySessions();
+    fetchAssignedClasses();
   }
 
-  Future<void> fetchTodaySessions() async {
+  Future<void> fetchAssignedClasses() async {
     isLoading.value = true;
+    hasError.value = false;
     try {
-      final response = await _apiClient.get('/class-sessions/me/today');
+      final response = await _apiClient.get('/periods/classes/me');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        sessions.assignAll(data.map((json) => ClassSessionModel.fromJson(json)).toList());
+        assignedClasses.assignAll(
+          data.map((json) => LectureClassModel.fromJson(json)).toList(),
+        );
+      } else {
+        hasError.value = true;
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load sessions: ${e.toString()}',
+      hasError.value = true;
+      Get.snackbar('Error', 'Failed to load assigned classes',
           snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;

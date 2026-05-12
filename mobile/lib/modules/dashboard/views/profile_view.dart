@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:mobile/core/values/app_colors.dart';
 import 'package:mobile/modules/dashboard/controllers/profile_controller.dart';
 import 'package:mobile/core/auth/auth_controller.dart';
-import 'package:mobile/modules/dashboard/models/lecturer_profile.dart';
+import 'package:mobile/data/models/user_model.dart';
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
@@ -23,181 +23,282 @@ class ProfileView extends GetView<ProfileController> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
-        children: [
-          _ProfileHeader(
-            primary: primary,
-            surface: surface,
-            onSurface: onSurface,
-            profile: controller.profile,
-          ),
-          const SizedBox(height: 20),
-          _SectionTitle(text: 'Account', primary: primary),
-          const SizedBox(height: 8),
-          _BorderedGroup(
-            primary: primary,
-            surface: surface,
-            children: [
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 2,
-                ),
-                leading: Icon(
-                  Icons.email_outlined,
-                  color: primary.withValues(alpha: 0.80),
-                ),
-                title: Text(
-                  'Email',
-                  style: TextStyle(
-                    color: onSurface.withValues(alpha: 0.60),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  controller.profile.email,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Divider(height: 1, color: primary.withValues(alpha: 0.10)),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 2,
-                ),
-                leading: Icon(
-                  Icons.phone_outlined,
-                  color: primary.withValues(alpha: 0.80),
-                ),
-                title: Text(
-                  'Phone',
-                  style: TextStyle(
-                    color: onSurface.withValues(alpha: 0.60),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  controller.profile.phone,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _SectionTitle(text: 'Location', primary: primary),
-          const SizedBox(height: 8),
-          _BorderedGroup(
-            primary: primary,
-            surface: surface,
-            children: [
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 4,
-                ),
-                leading: Icon(
-                  Icons.location_on_outlined,
-                  color: primary.withValues(alpha: 0.80),
-                ),
-                title: Text(
-                  'City',
-                  style: TextStyle(
-                    color: onSurface.withValues(alpha: 0.60),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  controller.profile.city,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _SectionTitle(text: 'About', primary: primary),
-          const SizedBox(height: 8),
-          _BorderedGroup(
-            primary: primary,
-            surface: surface,
-            children: [
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 4,
-                ),
-                leading: Icon(
-                  Icons.info_outline,
-                  color: primary.withValues(alpha: 0.80),
-                ),
-                title: const Text('App version'),
-                subtitle: Text(
-                  'JUST Lecturer Attendance 1.0.0',
-                  style: TextStyle(
-                    color: onSurface.withValues(alpha: 0.80),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Material(
-            color: surface,
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: () => _showLogoutDialog(context),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 14,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFC24B4B).withValues(alpha: 0.45),
-                    width: 0.8,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.logout,
-                      size: 20,
-                      color: const Color(0xFFC24B4B).withValues(alpha: 0.95),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Log out',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFFC24B4B),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        actions: [
+          IconButton(
+            onPressed: controller.fetchProfile,
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.hasError.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                const Text('Failed to load profile'),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: controller.fetchProfile,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final profile = controller.profile.value;
+        if (profile == null) {
+          return const Center(child: Text('No profile data found'));
+        }
+
+        return RefreshIndicator(
+          onRefresh: controller.fetchProfile,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+            children: [
+              _ProfileHeader(
+                primary: primary,
+                surface: surface,
+                onSurface: onSurface,
+                profile: profile,
+              ),
+              const SizedBox(height: 20),
+              _SectionTitle(text: 'Account', primary: primary),
+              const SizedBox(height: 8),
+              _BorderedGroup(
+                primary: primary,
+                surface: surface,
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 2,
+                    ),
+                    leading: Icon(
+                      Icons.email_outlined,
+                      color: primary.withValues(alpha: 0.80),
+                    ),
+                    title: Text(
+                      'Email',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.60),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      profile.email ?? profile.username,
+                      style: TextStyle(
+                        color: onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (profile.phone != null) ...[
+                    Divider(height: 1, color: primary.withValues(alpha: 0.10)),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 2,
+                      ),
+                      leading: Icon(
+                        Icons.phone_outlined,
+                        color: primary.withValues(alpha: 0.80),
+                      ),
+                      title: Text(
+                        'Phone',
+                        style: TextStyle(
+                          color: onSurface.withValues(alpha: 0.60),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        profile.phone!,
+                        style: TextStyle(
+                          color: onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 18),
+              _SectionTitle(text: 'Organization', primary: primary),
+              const SizedBox(height: 8),
+              _BorderedGroup(
+                primary: primary,
+                surface: surface,
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    leading: Icon(
+                      Icons.business_outlined,
+                      color: primary.withValues(alpha: 0.80),
+                    ),
+                    title: Text(
+                      'Faculty',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.60),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      profile.facultyName ?? 'Not Assigned',
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: primary.withValues(alpha: 0.10)),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    leading: Icon(
+                      Icons.verified_user_outlined,
+                      color: primary.withValues(alpha: 0.80),
+                    ),
+                    title: Text(
+                      'Account Status',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.60),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      profile.status?.toUpperCase() ?? 'ACTIVE',
+                      style: TextStyle(
+                        color: profile.status == 'suspended' ? Colors.red : Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _SectionTitle(text: 'Device', primary: primary),
+              const SizedBox(height: 8),
+              _BorderedGroup(
+                primary: primary,
+                surface: surface,
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    leading: Icon(
+                      Icons.smartphone_outlined,
+                      color: primary.withValues(alpha: 0.80),
+                    ),
+                    title: Text(
+                      'Registered Device ID',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.60),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      profile.registeredDeviceId ?? 'No device registered',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.80),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _SectionTitle(text: 'About', primary: primary),
+              const SizedBox(height: 8),
+              _BorderedGroup(
+                primary: primary,
+                surface: surface,
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    leading: Icon(
+                      Icons.info_outline,
+                      color: primary.withValues(alpha: 0.80),
+                    ),
+                    title: const Text('App version'),
+                    subtitle: Text(
+                      'JUST Lecturer Attendance 1.0.0',
+                      style: TextStyle(
+                        color: onSurface.withValues(alpha: 0.80),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Material(
+                color: surface,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => _showLogoutDialog(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFC24B4B).withValues(alpha: 0.45),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.logout,
+                          size: 20,
+                          color: const Color(0xFFC24B4B).withValues(alpha: 0.95),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Log out',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: const Color(0xFFC24B4B),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -250,7 +351,7 @@ class _ProfileHeader extends StatelessWidget {
   final Color primary;
   final Color surface;
   final Color onSurface;
-  final LecturerProfile profile;
+  final UserModel profile;
 
   @override
   Widget build(BuildContext context) {
@@ -311,7 +412,7 @@ class _ProfileHeader extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    profile.role,
+                    profile.role.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: secondary,
                       fontWeight: FontWeight.w800,
@@ -320,7 +421,7 @@ class _ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  profile.department,
+                  profile.facultyName ?? 'No Faculty Assigned',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: onSurface.withValues(alpha: 0.70),
                     height: 1.3,

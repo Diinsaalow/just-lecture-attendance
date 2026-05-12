@@ -5,6 +5,8 @@ import 'package:mobile/modules/home/home_view.dart';
 import 'package:mobile/modules/dashboard/views/dashboard_shell_view.dart';
 import 'package:mobile/modules/auth/views/login_view.dart';
 import 'package:mobile/modules/auth/login_binding.dart';
+import 'package:mobile/modules/home/class_details_binding.dart';
+import 'package:mobile/modules/home/class_details_view.dart';
 
 class Routes {
   Routes._();
@@ -28,6 +30,11 @@ class Routes {
       name: login,
       page: () => const LoginView(),
       binding: LoginBinding(),
+    ),
+    GetPage(
+      name: '/class-details',
+      page: () => const ClassDetailsView(),
+      binding: ClassDetailsBinding(),
     ),
   ];
 }

@@ -385,6 +385,39 @@ export class PeriodService {
     });
   }
 
+  async findAssignedClasses(user: AuthUserPayload): Promise<any[]> {
+    if (normalizeRoleName(user.role.name) !== 'instructor') {
+      throw new BadRequestException('This endpoint is only for instructors');
+    }
+
+    const periods = await this.periodModel
+      .find({
+        lecturerId: new Types.ObjectId(user.id),
+        status: EntityStatus.ACTIVE,
+      })
+      .populate({
+        path: 'classId',
+        populate: { path: 'departmentId', select: 'name' },
+      })
+      .lean()
+      .exec();
+
+    // Group by classId to get unique classes
+    const classMap = new Map<string, any>();
+    for (const p of periods) {
+      const cls = p.classId as any;
+      if (cls && !classMap.has(String(cls._id))) {
+        classMap.set(String(cls._id), {
+          ...cls,
+          id: String(cls._id),
+          // We can add more info here if needed
+        });
+      }
+    }
+
+    return Array.from(classMap.values());
+  }
+
   private assertTimeOrder(from: string, to: string): void {
     const fromM = parseHHmm(from, 'from');
     const toM = parseHHmm(to, 'to');
