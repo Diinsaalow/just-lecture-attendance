@@ -254,5 +254,19 @@
         "save": "Kaydi",
         "updated_successfully": "Dejinta mobile-ka si guul leh ayaa loo cusboonaysiiyay.",
         "failed_to_update": "Ku guul darreysatay cusboonaysiinta dejinta mobile-ka."
-    }
+    },
+    "devices_menu": "Maamulka Aaladaha",
+    "device_management": "Maamulka Aaladaha",
+    "pending_registrations": "Diiwaangelinta Sugaysa",
+    "registered_devices": "Aaladaha Diiwaangashan",
+    "clear_device": "Tirtir Aaladda",
+    "approve_device": "Anshaxi",
+    "reject_device": "Diid",
+    "clear_device_confirm": "Ma hubtaa inaad tirtirto diiwaangelinta aaladdan? Isticmaaluhu waa inuu diiwaangeliyaa aalad cusub.",
+    "device_model": "Nooca Aaladda",
+    "device_platform": "Platform-ka",
+    "status": "Xaaladda",
+    "actions": "Ficillada",
+    "search_users": "Raadi isticmaalayaasha...",
+    "no_device": "Aalad ma diiwaangashna"
 }

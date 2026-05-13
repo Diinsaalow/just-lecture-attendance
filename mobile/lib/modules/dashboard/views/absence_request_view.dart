@@ -136,7 +136,7 @@ class AbsenceRequestView extends GetView<AbsenceRequestController> {
                       ),
                     ),
                     Text(
-                      '${request.startDateLabel}',
+                      request.startDateLabel,
                       style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ],

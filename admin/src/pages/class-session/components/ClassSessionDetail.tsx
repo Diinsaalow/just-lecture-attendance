@@ -66,7 +66,7 @@ const ClassSessionDetail: React.FC<Props> = ({ classSessionId }) => {
             <p>Semester: {cell(row.semesterId, 'name')}</p>
             <p>Hall: {hallLabel(row.hallId)}</p>
             <p>
-                {row.dayLabel} · {row.type} · {row.fromTime}–{row.toTime}
+                {row.dayLabel} · {row.type} · {moment(row.fromTime, 'HH:mm').format('hh:mm A')}–{moment(row.toTime, 'HH:mm').format('hh:mm A')}
             </p>
             {canUpdate ? (
                 <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">

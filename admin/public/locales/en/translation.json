@@ -269,5 +269,19 @@
     "attendance_section": "Attendance",
     "submissions_menu": "Submissions",
     "reports_menu": "Reports",
-    "audit_logs_menu": "Audit logs"
+    "audit_logs_menu": "Audit logs",
+    "devices_menu": "Device Management",
+    "device_management": "Device Management",
+    "pending_registrations": "Pending Registrations",
+    "registered_devices": "Registered Devices",
+    "clear_device": "Clear Device",
+    "approve_device": "Approve Device",
+    "reject_device": "Reject Device",
+    "clear_device_confirm": "Are you sure you want to clear this device registration? The user will need to register a new device.",
+    "device_model": "Device Model",
+    "device_platform": "Platform",
+    "status": "Status",
+    "actions": "Actions",
+    "search_users": "Search users...",
+    "no_device": "No device registered"
 }

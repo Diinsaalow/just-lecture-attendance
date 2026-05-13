@@ -32,7 +32,7 @@ import {
   AttendanceRecordDocument,
 } from '../attendance/schemas/attendance-record.schema';
 import {
-  combineUtcDateAndTime,
+  combineDateAndTimeWithTz,
   startOfUtcDay as startOfUtcDayHelper,
 } from '../attendance/utils/session-time.util';
 import {
@@ -76,9 +76,44 @@ export class ClassSessionService {
   ) {}
 
   /** Sessions assigned to the authenticated instructor for today (UTC). */
-  async findMyToday(user: AuthUserPayload): Promise<ClassSession[]> {
-    const today = startOfUtcDayHelper(new Date());
-    return this.findInstructorSessionsInRange(user, today, today);
+  async findMyToday(user: AuthUserPayload): Promise<any[]> {
+    const settings = await this.attendanceSettingsService.getSettingsOrFail();
+    const tz = settings.timezone || 'Africa/Mogadishu';
+    
+    // 1. Find what time it is at the University
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+    }).formatToParts(now);
+    const map: Record<string, string> = {};
+    parts.forEach(p => map[p.type] = p.value);
+    
+    // 2. Create a UTC date at midnight for THAT local day
+    const localToday = new Date(Date.UTC(
+      Number(map.year),
+      Number(map.month) - 1,
+      Number(map.day)
+    ));
+    
+    const sessions = await this.findInstructorSessionsInRange(user, localToday, localToday);
+    
+    // 3. Annotate with real-time status flags
+    return sessions.map(s => {
+      const start = combineDateAndTimeWithTz(s.scheduledDate, s.fromTime, tz);
+      const end = combineDateAndTimeWithTz(s.scheduledDate, s.toTime, tz);
+      
+      const checkInOpen = new Date(start.getTime() - settings.checkInWindowBeforeMinutes * 60000);
+      const checkInClose = new Date(end.getTime() + settings.checkInWindowAfterMinutes * 60000);
+      const checkOutClose = new Date(end.getTime() + settings.checkOutGracePeriodMinutes * 60000);
+      
+      return {
+        ...(s as any).toObject(),
+        isActive: now >= checkInOpen && now <= checkOutClose,
+        isCheckInOpen: now >= checkInOpen && now <= checkInClose,
+        isCheckOutOpen: now >= start && now <= checkOutClose,
+      };
+    });
   }
 
   /**
@@ -120,15 +155,25 @@ export class ClassSessionService {
   ): Promise<ClassSession | null> {
     const now = new Date();
     const settings = await this.attendanceSettingsService.getSettingsOrFail();
-    const today = startOfUtcDayHelper(now);
+    const tz = settings.timezone || 'Africa/Mogadishu';
+    
+    // Find what time it is at the University
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+    }).formatToParts(now);
+    const map: Record<string, string> = {};
+    parts.forEach(p => map[p.type] = p.value);
+    const localToday = new Date(Date.UTC(Number(map.year), Number(map.month) - 1, Number(map.day)));
+
     const candidates = await this.findInstructorSessionsInRange(
       user,
-      today,
-      today,
+      localToday,
+      localToday,
     );
     for (const s of candidates) {
-      const start = combineUtcDateAndTime(s.scheduledDate, s.fromTime);
-      const end = combineUtcDateAndTime(s.scheduledDate, s.toTime);
+      const start = combineDateAndTimeWithTz(s.scheduledDate, s.fromTime, tz);
+      const end = combineDateAndTimeWithTz(s.scheduledDate, s.toTime, tz);
       const open = new Date(
         start.getTime() - settings.checkInWindowBeforeMinutes * 60000,
       );
@@ -151,7 +196,7 @@ export class ClassSessionService {
     user: AuthUserPayload,
     fromUtc: Date,
     toUtcInclusive: Date,
-  ): Promise<ClassSession[]> {
+  ): Promise<ClassSessionDocument[]> {
     if (!this.userScopeService.isInstructor(user)) {
       /** Mobile-only endpoints — admins should use the global tables. */
       throw new BadRequestException(

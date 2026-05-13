@@ -43,4 +43,7 @@ export class UpdateAttendanceSettingsDto {
   @IsOptional()
   @IsBoolean()
   qrCodeEnabled?: boolean;
+
+  @IsOptional()
+  timezone?: string;
 }

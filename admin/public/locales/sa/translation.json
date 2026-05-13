@@ -255,5 +255,19 @@
         "save": "حفظ",
         "updated_successfully": "تم تحديث إعدادات الجوال بنجاح.",
         "failed_to_update": "فشل في تحديث إعدادات الجوال."
-    }
+    },
+    "devices_menu": "إدارة الأجهزة",
+    "device_management": "إدارة الأجهزة",
+    "pending_registrations": "التسجيلات المعلقة",
+    "registered_devices": "الأجهزة المسجلة",
+    "clear_device": "مسح الجهاز",
+    "approve_device": "موافقة",
+    "reject_device": "رفض",
+    "clear_device_confirm": "هل أنت متأكد من مسح تسجيل هذا الجهاز؟ سيتعين على المستخدم تسجيل جهاز جديد.",
+    "device_model": "موديل الجهاز",
+    "device_platform": "المنصة",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "search_users": "البحث عن المستخدمين...",
+    "no_device": "لا يوجد جهاز مسجل"
 }

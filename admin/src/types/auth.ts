@@ -68,6 +68,10 @@ export interface IUser {
     // Kept for backward compatibility where older code might still reference it
     isActive?: boolean;
     referralCode?: string;
+    registeredDeviceId?: string;
+    pendingDeviceId?: string;
+    deviceModel?: string;
+    devicePlatform?: string;
     createdAt: string;
     updatedAt: string;
 }

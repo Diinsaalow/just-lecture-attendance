@@ -46,6 +46,7 @@ import { attendanceSettingsApi } from './api/attendanceSettingsApi';
 import { submissionApi } from './api/submissionApi';
 import { auditLogApi } from './api/auditLogApi';
 import { lectureReportsApi } from './api/lectureReportsApi';
+import { deviceApi } from './api/deviceApi';
 
 const rootReducer = combineReducers({
     themeConfig: themeConfigSlice,
@@ -94,6 +95,7 @@ const rootReducer = combineReducers({
     [submissionApi.reducerPath]: submissionApi.reducer,
     [auditLogApi.reducerPath]: auditLogApi.reducer,
     [lectureReportsApi.reducerPath]: lectureReportsApi.reducer,
+    [deviceApi.reducerPath]: deviceApi.reducer,
 });
 
 export const store = configureStore({
@@ -156,6 +158,7 @@ export const store = configureStore({
             submissionApi.middleware,
             auditLogApi.middleware,
             lectureReportsApi.middleware,
+            deviceApi.middleware,
         ),
     devTools: process.env.NODE_ENV !== 'production',
 });

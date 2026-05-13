@@ -4,7 +4,6 @@ import 'package:mobile/core/values/app_colors.dart';
 import 'package:mobile/modules/dashboard/controllers/dashboard_shell_controller.dart';
 import 'package:mobile/modules/dashboard/views/absence_request_view.dart';
 import 'package:mobile/modules/dashboard/views/attendance_history_view.dart';
-import 'package:mobile/modules/dashboard/views/dashboard_view.dart';
 import 'package:mobile/modules/dashboard/views/profile_view.dart';
 import 'package:mobile/modules/sessions/views/today_sessions_view.dart';
 import 'package:mobile/modules/home/home_view.dart';

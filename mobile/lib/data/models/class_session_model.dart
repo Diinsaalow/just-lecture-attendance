@@ -9,6 +9,10 @@ class ClassSessionModel {
   final NestedName courseInfo;
   final NestedHall? hallInfo;
 
+  final bool isActive;
+  final bool isCheckInOpen;
+  final bool isCheckOutOpen;
+
   ClassSessionModel({
     required this.id,
     required this.scheduledDate,
@@ -19,6 +23,9 @@ class ClassSessionModel {
     required this.classInfo,
     required this.courseInfo,
     this.hallInfo,
+    this.isActive = false,
+    this.isCheckInOpen = false,
+    this.isCheckOutOpen = false,
   });
 
   factory ClassSessionModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +41,9 @@ class ClassSessionModel {
       hallInfo: json['hallId'] != null 
           ? NestedHall.fromJson(json['hallId'] as Map<String, dynamic>)
           : null,
+      isActive: json['isActive'] as bool? ?? false,
+      isCheckInOpen: json['isCheckInOpen'] as bool? ?? false,
+      isCheckOutOpen: json['isCheckOutOpen'] as bool? ?? false,
     );
   }
 }

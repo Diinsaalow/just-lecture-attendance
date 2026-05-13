@@ -32,6 +32,59 @@ export function combineUtcDateAndTime(date: Date, hhmm: string): Date {
   );
 }
 
+/** 
+ * Returns a UTC Date at `date`'s calendar day + HH:mm, 
+ * treating the HH:mm as being in the provided `timezone`.
+ * 
+ * Uses Intl.DateTimeFormat to find the correct UTC offset for the target
+ * timezone at that specific calendar day.
+ */
+export function combineDateAndTimeWithTz(date: Date, hhmm: string, timezone: string): Date {
+  const [h, m] = parseHHmmStrict(hhmm, 'time');
+  
+  // 1. Create a "dummy" UTC date that has the correct clock numbers 
+  // (e.g. 08:00 clock time => 08:00 UTC)
+  const dummy = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    h,
+    m,
+    0,
+    0
+  ));
+
+  // 2. Determine how many milliseconds that specific clock time in the 
+  // target timezone is ahead of/behind UTC.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  }).formatToParts(dummy);
+  
+  const map: Record<string, string> = {};
+  parts.forEach(p => map[p.type] = p.value);
+  
+  const tzDate = new Date(Date.UTC(
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    Number(map.hour) === 24 ? 0 : Number(map.hour),
+    Number(map.minute),
+    Number(map.second)
+  ));
+  
+  const offsetMs = tzDate.getTime() - dummy.getTime();
+  
+  // 3. Subtract the offset to get the real UTC moment
+  return new Date(dummy.getTime() - offsetMs);
+}
+
 /** UTC midnight of the given date. */
 export function startOfUtcDay(date: Date): Date {
   return new Date(

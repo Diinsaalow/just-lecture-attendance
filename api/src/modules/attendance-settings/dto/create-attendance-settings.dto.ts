@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 /** Used for the initial creation of the attendance settings singleton. */
 export class CreateAttendanceSettingsDto {
@@ -36,4 +36,7 @@ export class CreateAttendanceSettingsDto {
 
   @IsBoolean()
   qrCodeEnabled: boolean;
+
+  @IsOptional()
+  timezone?: string;
 }

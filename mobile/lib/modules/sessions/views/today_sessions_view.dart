@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:mobile/core/auth/auth_controller.dart';
 import 'package:mobile/core/values/app_colors.dart';
 import 'package:mobile/modules/sessions/controllers/today_sessions_controller.dart';
-import 'package:mobile/data/models/class_session_model.dart';
 import 'package:intl/intl.dart';
 
 class TodaySessionsView extends GetView<TodaySessionsController> {
@@ -16,91 +15,103 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: RefreshIndicator(
+        onRefresh: () => controller.fetchTodaySessions(),
+        color: AppColors.primary,
+        child: Obx(() {
+          if (controller.isLoading.value && controller.sessions.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        return SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hey ${user?.firstName ?? "Instructor"}!',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1C1E),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Good evening, finish your attendance',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        _buildHeaderIcon(Icons.notifications_none),
-                        const SizedBox(width: 12),
-                        _buildHeaderIcon(Icons.crop_free, isSquare: true),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Time Section
-              Obx(() => Column(
+          return SafeArea(
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
                     children: [
-                      Text(
-                        DateFormat('hh:mm a').format(controller.currentTime.value),
-                        style: const TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1A1C1E),
-                          letterSpacing: -2,
+                      Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Hey ${user?.firstName ?? "Instructor"}!',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1A1C1E),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Good evening, finish your attendance',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                _buildHeaderIcon(Icons.notifications_none),
+                                const SizedBox(width: 12),
+                                _buildHeaderIcon(Icons.crop_free, isSquare: true),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        DateFormat('MMMM dd, yyyy • EEEE').format(controller.currentTime.value),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(height: 20),
+                      // Time Section
+                      Obx(() => Column(
+                            children: [
+                              Text(
+                                DateFormat('hh:mm a').format(controller.currentTime.value),
+                                style: const TextStyle(
+                                  fontSize: 64,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1A1C1E),
+                                  letterSpacing: -2,
+                                ),
+                              ),
+                              Text(
+                                DateFormat('MMMM dd, yyyy • EEEE').format(controller.currentTime.value),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          )),
+                      const SizedBox(height: 40),
+                      // Session Status / Action
+                      Expanded(
+                        child: Center(
+                          child: controller.sessions.isEmpty
+                              ? _buildEmptyState()
+                              : _buildMainActionArea(),
                         ),
                       ),
+                      // Summary Stats
+                      _buildSummaryStats(),
+                      const SizedBox(height: 20),
                     ],
-                  )),
-              const SizedBox(height: 40),
-              // Session Status / Action
-              Expanded(
-                child: Center(
-                  child: controller.sessions.isEmpty
-                      ? _buildEmptyState()
-                      : _buildMainActionArea(),
+                  ),
                 ),
-              ),
-              // Summary Stats
-              _buildSummaryStats(),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -138,7 +149,7 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
     final activeSession = controller.sessions.firstWhereOrNull((s) {
       final attendance = controller.attendanceStates[s.id];
       return attendance != null && !attendance.isCheckedOut;
-    }) ?? controller.sessions.first;
+    }) ?? controller.sessions.firstWhereOrNull((s) => s.isActive) ?? controller.sessions.first;
     
     final attendance = controller.attendanceStates[activeSession.id];
     final isCheckedIn = attendance != null && !attendance.isCheckedOut;
@@ -171,9 +182,25 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
             ),
             // Inner Button
             GestureDetector(
-              onTap: () => isCheckedIn 
-                  ? controller.checkOut(activeSession.id) 
-                  : controller.checkIn(activeSession.id),
+              onTap: () {
+                if (controller.isProcessing.value) return;
+                
+                if (isCheckedIn) {
+                  if (activeSession.isCheckOutOpen) {
+                    controller.checkOut(activeSession.id);
+                  } else {
+                    Get.snackbar('Cannot Check Out', 'Check-out is not open yet',
+                        snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+                  }
+                } else {
+                  if (activeSession.isCheckInOpen) {
+                    controller.checkIn(activeSession.id);
+                  } else {
+                    Get.snackbar('Cannot Check In', 'Check-in is not open yet',
+                        snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+                  }
+                }
+              },
               child: Container(
                 width: 140,
                 height: 140,
@@ -182,25 +209,31 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.grey[200]!),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isCheckedIn ? Icons.logout : Icons.crop_free,
-                      color: isCheckedIn ? Colors.red : AppColors.primary,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isCheckedIn ? 'Check Out' : 'Check In',
-                      style: TextStyle(
-                        color: isCheckedIn ? Colors.red : AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                child: controller.isProcessing.value
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isCheckedIn ? Icons.logout : Icons.crop_free,
+                            color: isCheckedIn 
+                                ? Colors.red 
+                                : (activeSession.isCheckInOpen ? AppColors.primary : Colors.grey),
+                            size: 40,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isCheckedIn ? 'Check Out' : 'Check In',
+                            style: TextStyle(
+                              color: isCheckedIn 
+                                  ? Colors.red 
+                                  : (activeSession.isCheckInOpen ? AppColors.primary : Colors.grey),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],

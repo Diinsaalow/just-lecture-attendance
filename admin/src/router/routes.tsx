@@ -20,6 +20,7 @@ import ClassSessions from '../pages/class-session';
 import Classes from '../pages/classes';
 import Courses from '../pages/course';
 import Halls from '../pages/hall';
+import DevicePage from '../pages/device/DevicePage';
 
 import Settings from '../pages/settings';
 import SettingsRoles from '../pages/settings/roles';
@@ -209,6 +210,14 @@ export const protectedRoutes: RouteConfig[] = [
         isPublic: false,
         resource: 'AuditLog',
         action: 'read',
+    },
+    {
+        path: '/devices',
+        element: <DevicePage />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'Device',
+        action: ['read', 'update'],
     },
     {
         path: '/reports',

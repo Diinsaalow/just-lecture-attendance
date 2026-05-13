@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:get/get.dart' hide Response;
+import 'package:mobile/routes/routes.dart';
 import '../auth/auth_storage.dart';
 
 class ApiClient {
@@ -29,9 +31,10 @@ class ApiClient {
           }
           return handler.next(options);
         },
-        onError: (DioException e, handler) {
+        onError: (DioException e, handler) async {
           if (e.response?.statusCode == 401) {
-            // Logout logic could be triggered here or handled by AuthController
+            await AuthStorage.clearAuthData();
+            Get.offAllNamed(Routes.login);
           }
           return handler.next(e);
         },

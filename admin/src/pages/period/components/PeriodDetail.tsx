@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import { useGetPeriodByIdQuery } from '../../../store/api/periodApi';
 import type { IPeriod } from '../../../types/period';
 
@@ -33,7 +34,7 @@ const PeriodDetail: React.FC<Props> = ({ periodId }) => {
             <p>Lecturer: {labelRef(row.lecturerId, 'username')}</p>
             <p>Semester: {labelRef(row.semesterId, 'name')}</p>
             <p>
-                {row.day} · {row.type} · {row.from}–{row.to}
+                {row.day} · {row.type} · {moment(row.from, 'HH:mm').format('hh:mm A')}–{moment(row.to, 'HH:mm').format('hh:mm A')}
             </p>
             <p>Hall: {hallLine(row.hallId)}</p>
             <p>Status: {row.status}</p>

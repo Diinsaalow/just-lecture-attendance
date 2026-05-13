@@ -1,15 +1,23 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:dio/dio.dart';
 import 'package:mobile/core/api/api_client.dart';
 import 'package:mobile/data/models/class_session_model.dart';
 import 'package:mobile/data/models/attendance_record_model.dart';
+import 'package:mobile/core/services/location_service.dart';
+import 'package:mobile/core/services/device_service.dart';
+import 'package:mobile/core/values/app_colors.dart';
 
 class TodaySessionsController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
+  final LocationService _locationService = Get.find<LocationService>();
+  final DeviceService _deviceService = Get.find<DeviceService>();
 
   final sessions = <ClassSessionModel>[].obs;
   final attendanceStates = <String, AttendanceRecordModel?>{}.obs;
   final isLoading = false.obs;
+  final isProcessing = false.obs;
   final hasError = false.obs;
   
   // For live tracking
@@ -72,40 +80,120 @@ class TodaySessionsController extends GetxController {
   }
 
   Future<void> checkIn(String sessionId) async {
+    isProcessing.value = true;
     try {
-      // In a real app, we'd send coordinates and deviceId
+      debugPrint('--- [CHECK-IN] STARTING ---');
+      final position = await _locationService.getCurrentPosition();
+      if (position == null) {
+        debugPrint('[CHECK-IN] Error: Location fetching failed.');
+        return;
+      }
+
+      final deviceId = await _deviceService.getDeviceId();
+      debugPrint('[CHECK-IN] Session ID: $sessionId');
+      debugPrint('[CHECK-IN] Device ID: $deviceId');
+      debugPrint('[CHECK-IN] Latitude: ${position.latitude}');
+      debugPrint('[CHECK-IN] Longitude: ${position.longitude}');
+      
       final response = await _apiClient.post('/attendance/check-in', data: {
         'sessionId': sessionId,
-        'lat': 0.0, // Placeholder
-        'lng': 0.0, // Placeholder
+        'method': 'BIOMETRIC',
+        'deviceId': deviceId,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
       });
       
+      debugPrint('[CHECK-IN] Success: ${response.statusCode}');
+      debugPrint('[CHECK-IN] Response Data: ${response.data}');
+
       if (response.statusCode == 201) {
         await fetchAttendanceState(sessionId);
-        Get.snackbar('Success', 'Checked in successfully',
-            backgroundColor: Get.theme.colorScheme.primaryContainer);
+        Get.snackbar(
+          'Success', 
+          'Checked in successfully',
+          backgroundColor: AppColors.primary,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Check-in failed: ${e.toString()}',
+      debugPrint('--- [CHECK-IN] ERROR ---');
+      debugPrint('[CHECK-IN] Error: $e');
+      if (e is DioException) {
+        debugPrint('[CHECK-IN] Response Code: ${e.response?.statusCode}');
+        debugPrint('[CHECK-IN] Response Data: ${e.response?.data}');
+      }
+      
+      String message = 'Check-in failed';
+      if (e is DioException && e.response?.data != null) {
+        message = e.response?.data['message'] ?? message;
+      }
+      Get.snackbar('Error', message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isProcessing.value = false;
+      debugPrint('--- [CHECK-IN] ENDED ---');
     }
   }
 
   Future<void> checkOut(String sessionId) async {
+    isProcessing.value = true;
     try {
+      debugPrint('--- [CHECK-OUT] STARTING ---');
+      final position = await _locationService.getCurrentPosition();
+      if (position == null) {
+        debugPrint('[CHECK-OUT] Error: Location fetching failed.');
+        return;
+      }
+
+      final deviceId = await _deviceService.getDeviceId();
+      debugPrint('[CHECK-OUT] Session ID: $sessionId');
+      debugPrint('[CHECK-OUT] Device ID: $deviceId');
+      debugPrint('[CHECK-OUT] Latitude: ${position.latitude}');
+      debugPrint('[CHECK-OUT] Longitude: ${position.longitude}');
+
       final response = await _apiClient.post('/attendance/check-out', data: {
         'sessionId': sessionId,
-        'lat': 0.0, // Placeholder
-        'lng': 0.0, // Placeholder
+        'method': 'BIOMETRIC',
+        'deviceId': deviceId,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
       });
       
+      debugPrint('[CHECK-OUT] Success: ${response.statusCode}');
+      debugPrint('[CHECK-OUT] Response Data: ${response.data}');
+
       if (response.statusCode == 200) {
         await fetchAttendanceState(sessionId);
-        Get.snackbar('Success', 'Checked out successfully');
+        Get.snackbar(
+          'Success', 
+          'Checked out successfully',
+          backgroundColor: AppColors.primary,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } catch (e) {
-      Get.snackbar('Error', 'Check-out failed: ${e.toString()}',
+      debugPrint('--- [CHECK-OUT] ERROR ---');
+      debugPrint('[CHECK-OUT] Error: $e');
+      if (e is DioException) {
+        debugPrint('[CHECK-OUT] Response Code: ${e.response?.statusCode}');
+        debugPrint('[CHECK-OUT] Response Data: ${e.response?.data}');
+      }
+
+      String message = 'Check-out failed';
+      if (e is DioException && e.response?.data != null) {
+        message = e.response?.data['message'] ?? message;
+      }
+      Get.snackbar('Error', message,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isProcessing.value = false;
+      debugPrint('--- [CHECK-OUT] ENDED ---');
     }
   }
 

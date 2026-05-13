@@ -24,7 +24,10 @@ import { DeviceService } from '../device/device.service';
 import { CheckInMethod } from './enums/check-in-method.enum';
 import { AttendanceStatus, StatusFlag } from './enums/attendance-status.enum';
 import { isWithinGeofence } from '../hall/hall-geofence.util';
-import { combineUtcDateAndTime } from './utils/session-time.util';
+import {
+  combineDateAndTimeWithTz,
+  combineUtcDateAndTime,
+} from './utils/session-time.util';
 
 /** Set of session statuses that block any further attendance activity. */
 const TERMINAL_SESSION_STATUSES = new Set<ClassSessionStatus>([
@@ -81,13 +84,16 @@ export class AttendanceValidationService {
     }
 
     const now = new Date();
-    const sessionStart = combineUtcDateAndTime(
+    const tz = settings.timezone || 'Africa/Mogadishu';
+    const sessionStart = combineDateAndTimeWithTz(
       session.scheduledDate,
       session.fromTime,
+      tz,
     );
-    const sessionEnd = combineUtcDateAndTime(
+    const sessionEnd = combineDateAndTimeWithTz(
       session.scheduledDate,
       session.toTime,
+      tz,
     );
 
     const windowStart = new Date(
@@ -97,16 +103,37 @@ export class AttendanceValidationService {
       sessionEnd.getTime() + settings.checkInWindowAfterMinutes * 60000,
     );
 
+    console.log(`[CHECK-IN DEBUG] Server current date/time: ${now.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Server timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+    console.log(`[CHECK-IN DEBUG] Configured University timezone: ${tz}`);
+    console.log(`[CHECK-IN DEBUG] Received sessionId: ${dto.sessionId}`);
+    console.log(`[CHECK-IN DEBUG] Session date: ${session.scheduledDate.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Session fromTime: ${session.fromTime}`);
+    console.log(`[CHECK-IN DEBUG] Session toTime: ${session.toTime}`);
+    console.log(`[CHECK-IN DEBUG] Parsed session start Date (UTC): ${sessionStart.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Parsed session end Date (UTC): ${sessionEnd.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Allowed check-in window start (UTC): ${windowStart.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Allowed check-in window end (UTC): ${windowEnd.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Current time used for comparison: ${now.toISOString()}`);
+    console.log(`[CHECK-IN DEBUG] Early check-in allowed minutes: ${settings.checkInWindowBeforeMinutes}`);
+    console.log(`[CHECK-IN DEBUG] Late check-in threshold minutes: ${settings.lateThresholdMinutes}`);
+    console.log(`[CHECK-IN DEBUG] Grace period: ${settings.checkInWindowAfterMinutes}`);
+
     if (now < windowStart) {
+      console.log(`[CHECK-IN DEBUG] Is current time before window: true`);
+      console.log(`[CHECK-IN DEBUG] Final time validation result: REJECTED_TOO_EARLY`);
       throw new BadRequestException(
         `Check-in opens ${settings.checkInWindowBeforeMinutes} minutes before the session starts`,
       );
     }
     if (now > windowEnd) {
+      console.log(`[CHECK-IN DEBUG] Is current time after window: true`);
+      console.log(`[CHECK-IN DEBUG] Final time validation result: REJECTED_TOO_LATE`);
       throw new BadRequestException(
         'Check-in window has closed for this session',
       );
     }
+    console.log(`[CHECK-IN DEBUG] Final time validation result: ACCEPTED`);
 
     if (settings.deviceValidationEnabled) {
       const isDeviceValid = await this.deviceService.verify(
@@ -230,9 +257,11 @@ export class AttendanceValidationService {
     }
 
     const now = new Date();
-    const sessionEnd = combineUtcDateAndTime(
+    const tz = settings.timezone || 'Africa/Mogadishu';
+    const sessionEnd = combineDateAndTimeWithTz(
       session.scheduledDate,
       session.toTime,
+      tz,
     );
     const gracePeriodEnd = new Date(
       sessionEnd.getTime() + settings.checkOutGracePeriodMinutes * 60000,

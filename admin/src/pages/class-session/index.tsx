@@ -154,8 +154,20 @@ const ClassSessionList = () => {
         { accessor: 'hallId', title: 'Hall', type: 'text', sortable: false, render: (row) => <span>{hallLabel(row.hallId)}</span> },
         { accessor: 'dayLabel', title: 'Day', type: 'text', sortable: true },
         { accessor: 'type', title: 'Type', type: 'text', sortable: true },
-        { accessor: 'fromTime', title: 'From', type: 'text', sortable: true },
-        { accessor: 'toTime', title: 'To', type: 'text', sortable: true },
+        {
+            accessor: 'fromTime',
+            title: 'From',
+            type: 'text',
+            sortable: true,
+            render: ({ fromTime }) => <span>{fromTime ? moment(fromTime, 'HH:mm').format('hh:mm A') : '-'}</span>,
+        },
+        {
+            accessor: 'toTime',
+            title: 'To',
+            type: 'text',
+            sortable: true,
+            render: ({ toTime }) => <span>{toTime ? moment(toTime, 'HH:mm').format('hh:mm A') : '-'}</span>,
+        },
         { accessor: 'status', title: 'Status', type: 'text', sortable: true },
         {
             accessor: 'actions',

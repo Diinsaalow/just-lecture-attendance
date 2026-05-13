@@ -16,6 +16,7 @@ const attendanceSettingsSchema = z.object({
     geofenceEnabled: z.boolean(),
     deviceValidationEnabled: z.boolean(),
     qrCodeEnabled: z.boolean(),
+    timezone: z.string().min(1, 'Timezone is required'),
 });
 
 type FormValues = z.infer<typeof attendanceSettingsSchema>;
@@ -44,6 +45,7 @@ const AttendanceSettingsPage: React.FC = () => {
             geofenceEnabled: true,
             deviceValidationEnabled: true,
             qrCodeEnabled: true,
+            timezone: 'Africa/Mogadishu',
         },
     });
 
@@ -58,6 +60,7 @@ const AttendanceSettingsPage: React.FC = () => {
                 geofenceEnabled: settings.geofenceEnabled,
                 deviceValidationEnabled: settings.deviceValidationEnabled,
                 qrCodeEnabled: settings.qrCodeEnabled,
+                timezone: settings.timezone || 'Africa/Mogadishu',
             });
         }
     }, [settings, reset]);
@@ -168,6 +171,19 @@ const AttendanceSettingsPage: React.FC = () => {
                             />
                             {errors.checkOutGracePeriodMinutes && <span className="text-xs text-danger">{errors.checkOutGracePeriodMinutes.message}</span>}
                             <p className="text-xs text-gray-500">How many minutes after the session ends instructors are still allowed to check out.</p>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label htmlFor="timezone" className="text-sm font-medium text-primary">University Timezone (IANA)</label>
+                            <input
+                                id="timezone"
+                                type="text"
+                                className="form-input border-primary/30"
+                                placeholder="Africa/Mogadishu"
+                                {...register('timezone')}
+                            />
+                            {errors.timezone && <span className="text-xs text-danger">{errors.timezone.message}</span>}
+                            <p className="text-xs text-gray-500">The timezone used for scheduled class periods (e.g. 'Africa/Mogadishu', 'Asia/Dubai').</p>
                         </div>
                     </div>
                 </div>

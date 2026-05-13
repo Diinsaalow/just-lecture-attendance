@@ -15,6 +15,7 @@ import {
     FileText,
     ClipboardList,
     ShieldAlert,
+    Smartphone,
 } from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
@@ -151,6 +152,13 @@ export const sidebarMenu: MenuItem[] = [
                 action: ['read', 'create', 'update', 'delete'],
             },
         ],
+    },
+    {
+        title: 'devices_menu',
+        icon: Smartphone,
+        path: '/devices',
+        resource: 'Device',
+        action: ['read', 'update'],
     },
     {
         title: 'settings',

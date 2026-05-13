@@ -7,18 +7,16 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { AuthUserPayload } from '../../common/decorators/current-user.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { CheckPolicies } from '../../common/casl/guards/policies.guard';
-import {
-  CreateBoundDevicePolicy,
-  DeleteBoundDevicePolicy,
-  ReadBoundDevicePolicy,
-} from '../../common/casl/policies/access.policies';
+import { RequirePermission } from '../../common/casl/decorators/require-permission.decorator';
+import { Action, Resource } from '../../common/casl/interfaces/action.interface';
 import { UserScopeService } from '../../common/casl/user-scope.service';
 import { DeviceService } from './device.service';
 import { RegisterDeviceDto } from './dto/register-device.dto';
+import { TableQueryDto } from '../../common/dto/table-query.dto';
 
 @Controller('devices')
 export class DeviceController {
@@ -27,33 +25,58 @@ export class DeviceController {
     private readonly userScopeService: UserScopeService,
   ) {}
 
-  /** Register or replace the authenticated instructor's device. */
   @Post('register')
   @HttpCode(HttpStatus.OK)
-  @CheckPolicies(CreateBoundDevicePolicy)
-  register(
-    @Body() dto: RegisterDeviceDto,
+  @RequirePermission(Action.Create, Resource.DEVICE)
+  async register(
     @CurrentUser() user: AuthUserPayload,
+    @Body() dto: RegisterDeviceDto,
   ) {
-    return this.deviceService.register(user.id, dto.deviceId);
+    return this.deviceService.register(user.id, dto);
   }
 
-  /** Get the authenticated instructor's registered device. */
-  @Get('me')
-  @CheckPolicies(ReadBoundDevicePolicy)
-  getMyDevice(@CurrentUser() user: AuthUserPayload) {
+  @Get()
+  @RequirePermission(Action.Read, Resource.DEVICE)
+  async findAll(
+    @Query() query: TableQueryDto,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.deviceService.findAll(query, user);
+  }
+
+  @Get('my')
+  @RequirePermission(Action.Read, Resource.DEVICE)
+  async getMyDevice(@CurrentUser() user: AuthUserPayload) {
     return this.deviceService.getMyDevice(user.id);
   }
 
-  /** Admin: clear an instructor's registered device — scoped to actor's faculty. */
+  @Post('approve/:userId')
+  @RequirePermission(Action.Update, Resource.DEVICE)
+  async approveDevice(
+    @Param('userId') targetUserId: string,
+    @CurrentUser() admin: AuthUserPayload,
+  ) {
+    await this.userScopeService.ensureUserInScope(admin, targetUserId);
+    return this.deviceService.approveDevice(targetUserId, admin.id);
+  }
+
+  @Post('reject/:userId')
+  @RequirePermission(Action.Update, Resource.DEVICE)
+  async rejectDevice(
+    @Param('userId') targetUserId: string,
+    @CurrentUser() admin: AuthUserPayload,
+  ) {
+    await this.userScopeService.ensureUserInScope(admin, targetUserId);
+    return this.deviceService.rejectDevice(targetUserId, admin.id);
+  }
+
   @Delete(':userId')
-  @HttpCode(HttpStatus.OK)
-  @CheckPolicies(DeleteBoundDevicePolicy)
+  @RequirePermission(Action.Delete, Resource.DEVICE)
   async clearDevice(
-    @Param('userId') userId: string,
+    @Param('userId') targetUserId: string,
     @CurrentUser() actor: AuthUserPayload,
   ) {
-    await this.userScopeService.ensureUserInScope(actor, userId);
-    return this.deviceService.clearDevice(userId);
+    await this.userScopeService.ensureUserInScope(actor, targetUserId);
+    return this.deviceService.clearDevice(targetUserId);
   }
 }

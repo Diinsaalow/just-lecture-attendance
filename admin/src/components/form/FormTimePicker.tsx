@@ -64,8 +64,8 @@ const FormTimePicker: React.FC<FormTimePickerProps> = ({
                         options={{
                             enableTime: true,
                             noCalendar: true,
-                            dateFormat: 'H:i',
-                            time_24hr: true,
+                            dateFormat: 'h:i K',
+                            time_24hr: false,
                             disableMobile: true,
                             position: isRtl ? 'auto right' : 'auto left',
                             appendTo: typeof document !== 'undefined' ? document.body : undefined,

@@ -8,6 +8,7 @@ export interface IAttendanceSettings {
     geofenceEnabled: boolean;
     deviceValidationEnabled: boolean;
     qrCodeEnabled: boolean;
+    timezone: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -21,6 +22,7 @@ export interface ICreateAttendanceSettingsDto {
     geofenceEnabled: boolean;
     deviceValidationEnabled: boolean;
     qrCodeEnabled: boolean;
+    timezone: string;
 }
 
 export interface IUpdateAttendanceSettingsDto extends Partial<ICreateAttendanceSettingsDto> {}

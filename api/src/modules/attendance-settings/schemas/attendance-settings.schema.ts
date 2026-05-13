@@ -58,6 +58,10 @@ export class AttendanceSettings {
   /** Whether QR code fallback is available. */
   @Prop({ type: Boolean, required: true })
   qrCodeEnabled: boolean;
+
+  /** Timezone for session times (e.g. 'Africa/Mogadishu'). Defaults to 'Africa/Mogadishu'. */
+  @Prop({ type: String, required: true, default: 'Africa/Mogadishu' })
+  timezone: string;
 }
 
 export const AttendanceSettingsSchema =

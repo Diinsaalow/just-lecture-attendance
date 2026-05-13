@@ -86,8 +86,20 @@ const PeriodList = () => {
         { accessor: 'hallId', title: 'Hall', type: 'text', sortable: false, render: (r) => <span>{hallLabel(r.hallId)}</span> },
         { accessor: 'day', title: 'Day', type: 'text', sortable: true },
         { accessor: 'type', title: 'Type', type: 'text', sortable: true },
-        { accessor: 'from', title: 'From', type: 'text', sortable: true },
-        { accessor: 'to', title: 'To', type: 'text', sortable: true },
+        {
+            accessor: 'from',
+            title: 'From',
+            type: 'text',
+            sortable: true,
+            render: ({ from }) => <span>{from ? moment(from, 'HH:mm').format('hh:mm A') : '-'}</span>,
+        },
+        {
+            accessor: 'to',
+            title: 'To',
+            type: 'text',
+            sortable: true,
+            render: ({ to }) => <span>{to ? moment(to, 'HH:mm').format('hh:mm A') : '-'}</span>,
+        },
         { accessor: 'status', title: 'Status', type: 'text', sortable: true },
         {
             accessor: 'createdAt',

@@ -44,6 +44,19 @@ export class User {
   /** Device ID registered for attendance check-in (1 device per instructor). */
   @Prop({ type: String, trim: true })
   registeredDeviceId?: string;
+
+  /** Device ID waiting for admin approval. */
+  @Prop({ type: String, trim: true })
+  pendingDeviceId?: string;
+
+  @Prop({ type: String, trim: true })
+  deviceModel?: string;
+
+  @Prop({ type: String, trim: true })
+  devicePlatform?: string;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
