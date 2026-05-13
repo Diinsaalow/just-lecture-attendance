@@ -68,13 +68,7 @@ class ProfileView extends GetView<ProfileController> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _buildSectionCard(
-                    title: 'Device Information',
-                    icon: Icons.devices_outlined,
-                    items: [
-                      _InfoRow(label: 'Registered ID', value: profile.registeredDeviceId ?? 'Not Registered'),
-                    ],
-                  ),
+                  _buildDeviceSection(profile),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -263,6 +257,144 @@ class ProfileView extends GetView<ProfileController> {
                 ),
               )),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceSection(UserModel profile) {
+    final isApproved = profile.registeredDeviceId != null;
+    final isPending = profile.pendingDeviceId != null;
+    
+    String status = 'Not Registered';
+    Color statusColor = Colors.red;
+    
+    if (isApproved) {
+      status = 'Approved';
+      statusColor = Colors.green;
+    } else if (isPending) {
+      status = 'Pending Approval';
+      statusColor = Colors.orange;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.devices_outlined, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Device Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (isApproved || isPending) ...[
+            _buildDeviceDetailRow(
+              label: 'Device ID', 
+              value: isApproved ? profile.registeredDeviceId! : profile.pendingDeviceId!,
+              onCopy: () => controller.copyToClipboard(isApproved ? profile.registeredDeviceId! : profile.pendingDeviceId!),
+            ),
+            if (profile.deviceModel != null)
+              _buildDeviceDetailRow(label: 'Model', value: profile.deviceModel!),
+          ] else
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: Obx(() => ElevatedButton.icon(
+                  onPressed: controller.isRegistering.value ? null : () => controller.registerDevice(),
+                  icon: controller.isRegistering.value 
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.add_to_home_screen),
+                  label: Text(controller.isRegistering.value ? 'Registering...' : 'Register This Device'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                )),
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceDetailRow({required String label, required String value, VoidCallback? onCopy}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (onCopy != null)
+                  TextButton.icon(
+                    onPressed: onCopy,
+                    icon: const Icon(Icons.copy, size: 14),
+                    label: const Text('Copy ID', style: TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

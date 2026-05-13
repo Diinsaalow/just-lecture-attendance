@@ -24,6 +24,7 @@ export type AuthPublicUser = {
   facultyId?: string;
   facultyName?: string;
   registeredDeviceId?: string;
+  pendingDeviceId?: string;
   abilities: Array<{
     action: string | string[];
     subject: string;
@@ -143,6 +144,7 @@ export class AuthService {
       facultyId,
       facultyName,
       registeredDeviceId: user.registeredDeviceId,
+      pendingDeviceId: user.pendingDeviceId,
       abilities,
     };
   }

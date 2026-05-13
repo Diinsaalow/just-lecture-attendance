@@ -10,6 +10,9 @@ class UserModel {
   final String? facultyId;
   final String? facultyName;
   final String? registeredDeviceId;
+  final String? pendingDeviceId;
+  final String? deviceModel;
+  final String? devicePlatform;
 
   UserModel({
     required this.id,
@@ -23,6 +26,9 @@ class UserModel {
     this.facultyId,
     this.facultyName,
     this.registeredDeviceId,
+    this.pendingDeviceId,
+    this.deviceModel,
+    this.devicePlatform,
   });
 
   String get fullName {
@@ -50,6 +56,9 @@ class UserModel {
       facultyId: json['facultyId'] as String?,
       facultyName: json['facultyName'] as String?,
       registeredDeviceId: json['registeredDeviceId'] as String?,
+      pendingDeviceId: json['pendingDeviceId'] as String?,
+      deviceModel: json['deviceModel'] as String?,
+      devicePlatform: json['devicePlatform'] as String?,
     );
   }
 
@@ -66,6 +75,9 @@ class UserModel {
       'facultyId': facultyId,
       'facultyName': facultyName,
       'registeredDeviceId': registeredDeviceId,
+      'pendingDeviceId': pendingDeviceId,
+      'deviceModel': deviceModel,
+      'devicePlatform': devicePlatform,
     };
   }
 }

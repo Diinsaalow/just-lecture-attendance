@@ -6,18 +6,38 @@ class DeviceService extends GetxService {
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
   Future<String> getDeviceId() async {
+    final info = await getRegistrationData();
+    return info['deviceId'] ?? 'unknown';
+  }
+
+  Future<Map<String, String>> getRegistrationData() async {
     try {
       if (Platform.isAndroid) {
         final androidInfo = await _deviceInfo.androidInfo;
-        // androidId is the most consistent for a specific device
-        return androidInfo.id; 
+        return {
+          'deviceId': androidInfo.id,
+          'deviceModel': '${androidInfo.manufacturer} ${androidInfo.model}',
+          'devicePlatform': 'android',
+        };
       } else if (Platform.isIOS) {
         final iosInfo = await _deviceInfo.iosInfo;
-        return iosInfo.identifierForVendor ?? 'unknown_ios_device';
+        return {
+          'deviceId': iosInfo.identifierForVendor ?? 'unknown_ios',
+          'deviceModel': iosInfo.name,
+          'devicePlatform': 'ios',
+        };
       }
-      return 'unknown_platform';
+      return {
+        'deviceId': 'unknown',
+        'deviceModel': 'unknown',
+        'devicePlatform': Platform.operatingSystem,
+      };
     } catch (e) {
-      return 'error_fetching_device_id';
+      return {
+        'deviceId': 'error',
+        'deviceModel': 'error',
+        'devicePlatform': Platform.operatingSystem,
+      };
     }
   }
 }
