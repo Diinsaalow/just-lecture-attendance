@@ -170,10 +170,24 @@ export class ReportsService {
     this.applyDateRange(match, filters);
     if (filters.facultyId) {
       this.assertSuperAdminOrSelf(actor, filters.facultyId);
-      match.facultyId = new Types.ObjectId(filters.facultyId);
+      if (this.userScope.isSuperAdmin(actor)) {
+        match.facultyId = new Types.ObjectId(filters.facultyId);
+      }
     }
     if (filters.instructorId) {
+      if (
+        this.userScope.isInstructor(actor) &&
+        actor.id !== filters.instructorId
+      ) {
+        throw new BadRequestException('You can only view your own data');
+      }
       match.instructorUserId = new Types.ObjectId(filters.instructorId);
+    }
+    if (filters.departmentId) {
+      match.departmentId = new Types.ObjectId(filters.departmentId);
+    }
+    if (filters.classId) {
+      match.classId = new Types.ObjectId(filters.classId);
     }
     return match;
   }

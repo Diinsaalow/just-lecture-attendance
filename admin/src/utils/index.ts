@@ -49,7 +49,9 @@ export const formatQueryParams = (options: any) => {
     // Handle query parameters
     if (options.query) {
         Object.entries(options.query).forEach(([key, value]) => {
-            params[`query[${key}]`] = value;
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                params[`query[${key}]`] = value;
+            }
         });
     }
 

@@ -16,6 +16,7 @@ import {
     ClipboardList,
     ShieldAlert,
     Smartphone,
+    ListChecks,
 } from 'lucide-react';
 
 import { MenuItem } from '../types/sidebar';
@@ -107,6 +108,13 @@ export const sidebarMenu: MenuItem[] = [
     {
         title: 'attendance_section',
         isSection: true,
+    },
+    {
+        title: 'attendance_records_menu',
+        icon: ListChecks,
+        path: '/attendance-records',
+        resource: 'AttendanceRecord',
+        action: 'read',
     },
     {
         title: 'submissions_menu',

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -17,6 +21,9 @@ import {
   AuditAction,
   AuditEntity,
 } from '../audit-log/enums/audit-action.enum';
+import { UserScopeService } from '../../common/casl/user-scope.service';
+import { AttendanceStatus } from './enums/attendance-status.enum';
+import { CheckInMethod } from './enums/check-in-method.enum';
 
 @Injectable()
 export class AttendanceService {
@@ -25,6 +32,7 @@ export class AttendanceService {
     private readonly attendanceModel: Model<AttendanceRecordDocument>,
     private readonly validationService: AttendanceValidationService,
     private readonly auditLog: AuditLogService,
+    private readonly userScope: UserScopeService,
   ) {}
 
   async checkIn(dto: CheckInDto, user: AuthUserPayload) {
@@ -109,7 +117,7 @@ export class AttendanceService {
 
   async findMyHistory(query: TableQueryDto, user: AuthUserPayload) {
     return paginateFind<AttendanceRecordDocument>(this.attendanceModel, query, {
-      searchFields: ['status', 'scheduledStart', 'scheduledEnd'],
+      searchFields: ['status', 'scheduledStart', 'scheduledEnd', 'checkInMethod'],
       defaultSort: { scheduledDate: -1 },
       populate: [
         {
@@ -120,6 +128,8 @@ export class AttendanceService {
           ],
         },
         { path: 'hallId', select: 'name code' },
+        { path: 'facultyId', select: 'name' },
+        { path: 'departmentId', select: 'name' },
       ],
       baseMatch: { instructorUserId: new Types.ObjectId(user.id) },
     });
@@ -139,22 +149,139 @@ export class AttendanceService {
       .exec();
   }
 
-  async findAllPaginated(
-    query: TableQueryDto,
-    userScopeFilters: Record<string, unknown>,
-  ) {
+  async findAllPaginated(query: TableQueryDto, user: AuthUserPayload) {
+    const scope = await this.userScope.attendanceMatch(user);
+    const filters = this.buildListFilters(query);
+    const baseMatch = this.mergeScopeWithFilters(user, scope, filters);
     return paginateFind<AttendanceRecordDocument>(this.attendanceModel, query, {
-      searchFields: ['status', 'scheduledStart', 'scheduledEnd'],
+      searchFields: ['status', 'scheduledStart', 'scheduledEnd', 'checkInMethod'],
       defaultSort: { scheduledDate: -1 },
       populate: [
-        { path: 'instructorUserId', select: 'username email' },
-        { path: 'sessionId' },
+        {
+          path: 'instructorUserId',
+          select:
+            'username firstName lastName email registeredDeviceId pendingDeviceId',
+        },
+        { path: 'facultyId', select: 'name' },
+        { path: 'departmentId', select: 'name' },
+        { path: 'classId', select: 'name' },
+        { path: 'courseId', select: 'name' },
         { path: 'hallId', select: 'name code' },
       ],
-      baseMatch:
-        userScopeFilters && Object.keys(userScopeFilters).length > 0
-          ? userScopeFilters
-          : undefined,
+      baseMatch,
     });
+  }
+
+  async findByIdForUser(id: string, user: AuthUserPayload) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Attendance record not found');
+    }
+    const scope = await this.userScope.attendanceMatch(user);
+    const baseMatch = this.mergeScopeWithFilters(user, scope, {
+      _id: new Types.ObjectId(id),
+    });
+    const doc = await this.attendanceModel
+      .findOne(baseMatch as never)
+      .populate([
+        {
+          path: 'instructorUserId',
+          select:
+            'username firstName lastName email registeredDeviceId pendingDeviceId',
+        },
+        { path: 'facultyId', select: 'name' },
+        { path: 'departmentId', select: 'name' },
+        { path: 'classId', select: 'name' },
+        { path: 'courseId', select: 'name' },
+        { path: 'hallId', select: 'name code' },
+        {
+          path: 'sessionId',
+          select: 'scheduledDate fromTime toTime status type',
+        },
+      ])
+      .lean()
+      .exec();
+    if (!doc) {
+      throw new NotFoundException('Attendance record not found');
+    }
+    return doc;
+  }
+
+  private buildListFilters(q: TableQueryDto): Record<string, unknown> {
+    const raw = q.query ?? {};
+    const pick = (k: string): string | undefined => {
+      const v = raw[k];
+      if (v === undefined || v === null || v === '') return undefined;
+      const s = Array.isArray(v) ? v[0] : String(v);
+      return s.trim() === '' ? undefined : s;
+    };
+    const out: Record<string, unknown> = {};
+
+    for (const key of [
+      'facultyId',
+      'departmentId',
+      'classId',
+      'courseId',
+    ] as const) {
+      const s = pick(key);
+      if (s && Types.ObjectId.isValid(s)) {
+        out[key] = new Types.ObjectId(s);
+      }
+    }
+
+    const inst = pick('instructorUserId') ?? pick('instructorId');
+    if (inst && Types.ObjectId.isValid(inst)) {
+      out.instructorUserId = new Types.ObjectId(inst);
+    }
+
+    const st = pick('status');
+    if (st && (Object.values(AttendanceStatus) as string[]).includes(st)) {
+      out.status = st;
+    }
+
+    const m = pick('checkInMethod');
+    if (m && (Object.values(CheckInMethod) as string[]).includes(m)) {
+      out.checkInMethod = m;
+    }
+
+    const from = pick('startDate') ?? pick('from') ?? q.startDate;
+    const to = pick('endDate') ?? pick('to') ?? q.endDate;
+    if (from || to) {
+      const range: Record<string, Date> = {};
+      if (from) range.$gte = new Date(from);
+      if (to) {
+        const end = new Date(to);
+        end.setUTCHours(23, 59, 59, 999);
+        range.$lte = end;
+      }
+      out.scheduledDate = range;
+    }
+
+    return out;
+  }
+
+  /**
+   * Merges row-level filters with role scope. Instructors cannot widen scope
+   * via query params; faculty admins cannot pick another faculty.
+   */
+  private mergeScopeWithFilters(
+    user: AuthUserPayload,
+    scope: Record<string, unknown>,
+    filters: Record<string, unknown>,
+  ): Record<string, unknown> | undefined {
+    const scopedFilters = { ...filters };
+
+    if (this.userScope.isInstructor(user)) {
+      delete scopedFilters.instructorUserId;
+      delete scopedFilters.facultyId;
+    } else if (this.userScope.isFacultyAdmin(user)) {
+      delete scopedFilters.facultyId;
+    }
+
+    const parts: Record<string, unknown>[] = [];
+    if (Object.keys(scope).length > 0) parts.push(scope);
+    if (Object.keys(scopedFilters).length > 0) parts.push(scopedFilters);
+    if (parts.length === 0) return undefined;
+    if (parts.length === 1) return parts[0];
+    return { $and: parts };
   }
 }

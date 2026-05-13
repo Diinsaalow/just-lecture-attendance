@@ -29,6 +29,7 @@ import AttendanceSettingsPage from '../pages/settings/attendance';
 import SystemDashboard from '../pages/dashboard/SystemDashboard';
 
 import SubmissionsPage from '../pages/submissions';
+import AttendanceRecordsPage from '../pages/attendance-records';
 import AuditLogsPage from '../pages/audit-logs';
 import ReportsPage from '../pages/reports';
 
@@ -202,6 +203,14 @@ export const protectedRoutes: RouteConfig[] = [
         isPublic: false,
         resource: 'AbsenceSubmission',
         action: ['read', 'update'],
+    },
+    {
+        path: '/attendance-records',
+        element: <AttendanceRecordsPage />,
+        layout: 'default',
+        isPublic: false,
+        resource: 'AttendanceRecord',
+        action: 'read',
     },
     {
         path: '/audit-logs',

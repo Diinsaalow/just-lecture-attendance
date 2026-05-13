@@ -94,7 +94,15 @@ export class AttendanceController {
     @Query() query: TableQueryDto,
     @CurrentUser() user: AuthUserPayload,
   ) {
-    const scopeFilters = await this.userScopeService.attendanceMatch(user);
-    return this.attendanceService.findAllPaginated(query, scopeFilters);
+    return this.attendanceService.findAllPaginated(query, user);
+  }
+
+  @Get(':id')
+  @CheckPolicies(ReadAttendanceRecordPolicy)
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthUserPayload,
+  ) {
+    return this.attendanceService.findByIdForUser(id, user);
   }
 }

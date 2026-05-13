@@ -40,6 +40,24 @@ export class TableQueryDto {
   @IsString()
   variant?: string;
 
+  /**
+   * Flat filters from admin tables (`query[field]=value`).
+   * Each service allowlists which keys are applied.
+   */
+  @IsOptional()
+  @IsObject()
+  query?: Record<string, string | string[] | undefined>;
+
+  /** Inclusive scheduled-date lower bound (ISO), e.g. for attendance lists. */
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  /** Inclusive scheduled-date upper bound (ISO). */
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => TableSearchDto)

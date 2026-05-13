@@ -3,6 +3,9 @@ import { HydratedDocument, Types } from 'mongoose';
 import { User } from '../../users/schemas/user.schema';
 import { ClassSession } from '../../class-session/schemas/class-session.schema';
 import { Faculty } from '../../faculty/schemas/faculty.schema';
+import { Department } from '../../department/schemas/department.schema';
+import { LectureClass } from '../../classes/schemas/lecture-class.schema';
+import { Course } from '../../course/schemas/course.schema';
 import { Campus } from '../../campus/schemas/campus.schema';
 import { Hall } from '../../hall/schemas/hall.schema';
 import { AttendanceStatus } from '../enums/attendance-status.enum';
@@ -26,6 +29,18 @@ export class AttendanceRecord {
     index: true,
   })
   facultyId: Types.ObjectId;
+
+  /** Denormalized from session — optional for legacy rows before this field existed. */
+  @Prop({ type: Types.ObjectId, ref: Department.name, index: true })
+  departmentId?: Types.ObjectId;
+
+  /** Denormalized lecture class (timetable group). */
+  @Prop({ type: Types.ObjectId, ref: LectureClass.name, index: true })
+  classId?: Types.ObjectId;
+
+  /** Denormalized course offering. */
+  @Prop({ type: Types.ObjectId, ref: Course.name, index: true })
+  courseId?: Types.ObjectId;
 
   /** Denormalized for scoped queries. */
   @Prop({ type: Types.ObjectId, ref: Campus.name, required: true })

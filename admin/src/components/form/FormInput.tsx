@@ -27,8 +27,8 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(({ label, icon: I
     // Handler to restrict input to numbers (and one dot) for number type
     const handleNumberInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.target.value;
-        // Allow only digits and at most one dot
-        if (/^\d*\.?\d*$/.test(val)) {
+        // Allow only digits, at most one dot, and an optional leading minus sign
+        if (/^-?\d*\.?\d*$/.test(val)) {
             onChange(val);
         }
     };
