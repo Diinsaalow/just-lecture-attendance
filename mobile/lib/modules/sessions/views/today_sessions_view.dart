@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile/core/auth/auth_controller.dart';
 import 'package:mobile/core/values/app_colors.dart';
+import 'package:mobile/data/models/attendance_record_model.dart';
+import 'package:mobile/data/models/class_session_model.dart';
 import 'package:mobile/modules/sessions/controllers/today_sessions_controller.dart';
 import 'package:intl/intl.dart';
 
 class TodaySessionsView extends GetView<TodaySessionsController> {
   const TodaySessionsView({super.key});
+
+  static String _fmtTime(DateTime? t) =>
+      t == null ? '—' : DateFormat('hh:mm a').format(t.toLocal());
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +75,6 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Time Section
                       Obx(() => Column(
                             children: [
                               Text(
@@ -92,17 +96,23 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
                               ),
                             ],
                           )),
-                      const SizedBox(height: 40),
-                      // Session Status / Action
+                      const SizedBox(height: 24),
                       Expanded(
                         child: Center(
                           child: controller.sessions.isEmpty
                               ? _buildEmptyState()
-                              : _buildMainActionArea(),
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: _buildSessionCard(controller.getPrimarySession()!),
+                                ),
                         ),
                       ),
-                      // Summary Stats
-                      _buildSummaryStats(),
+                      Obx(() {
+                        final session = controller.getPrimarySession();
+                        final attendance =
+                            session != null ? controller.attendanceStates[session.id] : null;
+                        return _buildSummaryStats(attendance);
+                      }),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -145,137 +155,301 @@ class TodaySessionsView extends GetView<TodaySessionsController> {
     );
   }
 
-  Widget _buildMainActionArea() {
-    final activeSession = controller.sessions.firstWhereOrNull((s) {
-      final attendance = controller.attendanceStates[s.id];
-      return attendance != null && !attendance.isCheckedOut;
-    }) ?? controller.sessions.firstWhereOrNull((s) => s.isActive) ?? controller.sessions.first;
-    
-    final attendance = controller.attendanceStates[activeSession.id];
-    final isCheckedIn = attendance != null && !attendance.isCheckedOut;
+  Widget _buildSessionCard(ClassSessionModel session) {
+    final attendance = controller.attendanceStates[session.id];
+    final checkedIn = attendance?.isCurrentlyCheckedIn == true;
+    final checkedOut = attendance?.isCheckedOut == true;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Outer Ring
-            Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey[100]!),
-              ),
-            ),
-            // Middle Ring
-            Container(
-              width: 190,
-              height: 190,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F4F9),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-              ),
-            ),
-            // Inner Button
-            GestureDetector(
-              onTap: () {
-                if (controller.isProcessing.value) return;
-                
-                if (isCheckedIn) {
-                  if (activeSession.isCheckOutOpen) {
-                    controller.checkOut(activeSession.id);
-                  } else {
-                    Get.snackbar('Cannot Check Out', 'Check-out is not open yet',
-                        snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
-                  }
-                } else {
-                  if (activeSession.isCheckInOpen) {
-                    controller.checkIn(activeSession.id);
-                  } else {
-                    Get.snackbar('Cannot Check In', 'Check-in is not open yet',
-                        snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
-                  }
-                }
-              },
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[200]!),
+    final scheduledDateStr =
+        DateFormat('EEE, MMM d').format(session.scheduledDate.toLocal());
+    final hallLine = session.hallInfo != null
+        ? '${session.hallInfo!.name} (${session.hallInfo!.code})'
+        : 'Hall not assigned';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  session.courseInfo.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1C1E),
+                  ),
                 ),
-                child: controller.isProcessing.value
-                    ? const Center(child: CircularProgressIndicator())
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isCheckedIn ? Icons.logout : Icons.crop_free,
-                            color: isCheckedIn 
-                                ? Colors.red 
-                                : (activeSession.isCheckInOpen ? AppColors.primary : Colors.grey),
-                            size: 40,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            isCheckedIn ? 'Check Out' : 'Check In',
-                            style: TextStyle(
-                              color: isCheckedIn 
-                                  ? Colors.red 
-                                  : (activeSession.isCheckInOpen ? AppColors.primary : Colors.grey),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
+              ),
+              _buildStatusChip(attendance, checkedIn, checkedOut),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            session.classInfo.name,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            hallLine,
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 16),
+          _buildDetailRow(
+            Icons.schedule,
+            'Session time',
+            '$scheduledDateStr · ${session.fromTime} – ${session.toTime}',
+          ),
+          if (attendance?.scheduledStart != null && attendance?.scheduledEnd != null) ...[
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              Icons.event_note_outlined,
+              'Recorded window',
+              '${attendance!.scheduledStart} – ${attendance.scheduledEnd}',
+            ),
+          ],
+          if (attendance != null && attendance.checkInAt != null) ...[
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              Icons.login,
+              'Check-in time',
+              _fmtTime(attendance.checkInAt),
+            ),
+          ],
+          if (checkedOut && attendance?.checkOutAt != null) ...[
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              Icons.logout,
+              'Check-out time',
+              _fmtTime(attendance!.checkOutAt),
+            ),
+          ],
+          if (checkedIn) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                controller.getRemainingTime(session),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 32),
-        if (isCheckedIn)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              controller.getRemainingTime(activeSession),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
+          const SizedBox(height: 20),
+          _buildSessionActions(session, attendance, checkedIn, checkedOut),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: Colors.grey[500]),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                  letterSpacing: 0.3,
+                ),
               ),
-            ),
-          )
-        else
-          Text(
-            activeSession.courseInfo.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1C1E),
+                ),
+              ),
+            ],
           ),
+        ),
       ],
     );
   }
 
-  Widget _buildSummaryStats() {
+  Widget _buildStatusChip(
+    AttendanceRecordModel? attendance,
+    bool checkedIn,
+    bool checkedOut,
+  ) {
+    Color bg;
+    Color fg;
+    String label;
+    if (checkedOut) {
+      bg = Colors.blueGrey.withValues(alpha: 0.12);
+      fg = Colors.blueGrey.shade800;
+      label = attendance?.displayStatus ?? 'Checked Out';
+    } else if (checkedIn) {
+      bg = AppColors.primary.withValues(alpha: 0.12);
+      fg = AppColors.primary;
+      label = attendance?.displayStatus ?? 'Checked In';
+    } else {
+      bg = Colors.orange.withValues(alpha: 0.12);
+      fg = Colors.deepOrange.shade800;
+      label = 'Not checked in';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: fg,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSessionActions(
+    ClassSessionModel session,
+    AttendanceRecordModel? attendance,
+    bool checkedIn,
+    bool checkedOut,
+  ) {
+    if (checkedOut) {
+      return const SizedBox.shrink();
+    }
+
+    if (checkedIn) {
+      return SizedBox(
+        width: double.infinity,
+        child: Obx(() {
+          final busy = controller.isProcessing.value;
+          final canOut = session.isCheckOutOpen;
+          return FilledButton.icon(
+            onPressed: busy
+                ? null
+                : () {
+                    if (!canOut) {
+                      Get.snackbar(
+                        'Cannot Check Out',
+                        'Check-out is not open yet',
+                        snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: Colors.orange,
+                        colorText: Colors.white,
+                      );
+                      return;
+                    }
+                    controller.checkOut(session.id);
+                  },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: busy
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.logout),
+            label: Text(busy ? 'Checking out…' : 'Check Out'),
+          );
+        }),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: Obx(() {
+        final busy = controller.isProcessing.value;
+        final canIn = session.isCheckInOpen;
+        return FilledButton.icon(
+          onPressed: busy
+              ? null
+              : () {
+                  if (!canIn) {
+                    Get.snackbar(
+                      'Cannot Check In',
+                      'Check-in is not open yet',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.orange,
+                      colorText: Colors.white,
+                    );
+                    return;
+                  }
+                  controller.checkIn(session.id);
+                },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          icon: busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.crop_free),
+          label: Text(busy ? 'Checking in…' : 'Check In'),
+        );
+      }),
+    );
+  }
+
+  Widget _buildSummaryStats(AttendanceRecordModel? attendance) {
+    final checkInLabel = _fmtTime(attendance?.checkInAt);
+    final checkOutLabel = _fmtTime(attendance?.checkOutAt);
+    String totalLabel = '0h 0m';
+    if (attendance?.checkInAt != null && attendance?.checkOutAt != null) {
+      final d = attendance!.checkOutAt!.difference(attendance.checkInAt!);
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60);
+      totalLabel = '${h}h ${m}m';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildStatItem(Icons.arrow_forward, '--:--', 'CHECK IN'),
-          _buildStatItem(Icons.arrow_back, '--:--', 'CHECK OUT'),
-          _buildStatItem(Icons.access_time, '0h 0m', 'TOTAL HRS'),
+          _buildStatItem(Icons.arrow_forward, checkInLabel, 'CHECK IN'),
+          _buildStatItem(Icons.arrow_back, checkOutLabel, 'CHECK OUT'),
+          _buildStatItem(Icons.access_time, totalLabel, 'TOTAL HRS'),
         ],
       ),
     );

@@ -5,7 +5,7 @@ import '../auth/auth_storage.dart';
 
 class ApiClient {
   static const String baseUrl =
-      'http://10.1.1.32:5000/api/v1'; // Default for Android emulator
+      'http://10.137.79.73:5000/api/v1'; // Default for Android emulator
 
   late Dio dio;
 

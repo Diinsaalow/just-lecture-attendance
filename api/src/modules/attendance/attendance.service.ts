@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -27,6 +28,8 @@ import { CheckInMethod } from './enums/check-in-method.enum';
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
   constructor(
     @InjectModel(AttendanceRecord.name)
     private readonly attendanceModel: Model<AttendanceRecordDocument>,
@@ -50,7 +53,11 @@ export class AttendanceService {
         facultyId: created.facultyId,
         after: { status: created.status, statusFlags: created.statusFlags },
       });
-      return created;
+      return this.attendanceModel
+        .findById(created._id)
+        .populate('hallId', 'name code')
+        .lean()
+        .exec();
     } catch (err: unknown) {
       /**
        * The unique `(sessionId, instructorUserId)` index protects against the
@@ -82,7 +89,11 @@ export class AttendanceService {
       facultyId: saved.facultyId,
       after: { status: saved.status, statusFlags: saved.statusFlags },
     });
-    return saved;
+    return this.attendanceModel
+      .findById(saved._id)
+      .populate('hallId', 'name code')
+      .lean()
+      .exec();
   }
 
   async adminCheckOut(dto: AdminCheckOutDto, adminUser: AuthUserPayload) {
@@ -137,16 +148,62 @@ export class AttendanceService {
 
   /** State for a single session for the authenticated instructor — null if no record exists. */
   async findMySessionState(sessionId: string, user: AuthUserPayload) {
-    if (!Types.ObjectId.isValid(sessionId)) {
+    const tag = `[ATTENDANCE STATE] session=${sessionId} instructor=${user.id}`;
+
+    if (!Types.ObjectId.isValid(sessionId) || !Types.ObjectId.isValid(user.id)) {
+      this.logger.warn(`${tag} — invalid id, returning null`);
       return null;
     }
-    return this.attendanceModel
-      .findOne({
-        sessionId: new Types.ObjectId(sessionId),
-        instructorUserId: new Types.ObjectId(user.id),
-      })
+
+    const sessionObj = new Types.ObjectId(sessionId);
+    const instructorObj = new Types.ObjectId(user.id);
+
+    // 1) Mongoose with strings.
+    let row = await this.attendanceModel
+      .findOne({ sessionId, instructorUserId: user.id })
       .populate('hallId', 'name code')
+      .lean()
       .exec();
+    if (row) {
+      this.logger.debug(`${tag} — matched via mongoose-string (_id=${row._id})`);
+      return row;
+    }
+
+    // 2) Mongoose with explicit ObjectId casts.
+    row = await this.attendanceModel
+      .findOne({ sessionId: sessionObj, instructorUserId: instructorObj })
+      .populate('hallId', 'name code')
+      .lean()
+      .exec();
+    if (row) {
+      this.logger.debug(`${tag} — matched via mongoose-objectid (_id=${row._id})`);
+      return row;
+    }
+
+    // 3) Raw driver fallback to detect mixed-type or stale-schema rows.
+    const rawCollection =
+      this.attendanceModel.collection ??
+      this.attendanceModel.db.collection('attendance_records');
+
+    const rawDoc = await rawCollection.findOne({
+      $or: [
+        { sessionId: sessionObj, instructorUserId: instructorObj },
+        { sessionId, instructorUserId: user.id },
+        { sessionId: sessionObj, instructorUserId: user.id },
+        { sessionId, instructorUserId: instructorObj },
+      ],
+    });
+    if (rawDoc) {
+      this.logger.debug(`${tag} — matched via raw-driver (_id=${rawDoc._id})`);
+      return this.attendanceModel
+        .findById(rawDoc._id)
+        .populate('hallId', 'name code')
+        .lean()
+        .exec();
+    }
+
+    this.logger.warn(`${tag} — no row found`);
+    return null;
   }
 
   async findAllPaginated(query: TableQueryDto, user: AuthUserPayload) {

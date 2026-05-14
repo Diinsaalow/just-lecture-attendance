@@ -2,10 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   AttendanceRecord,
   AttendanceRecordDocument,
@@ -38,6 +39,8 @@ const TERMINAL_SESSION_STATUSES = new Set<ClassSessionStatus>([
 
 @Injectable()
 export class AttendanceValidationService {
+  private readonly logger = new Logger(AttendanceValidationService.name);
+
   constructor(
     @InjectModel(AttendanceRecord.name)
     private readonly attendanceModel: Model<AttendanceRecordDocument>,
@@ -48,6 +51,132 @@ export class AttendanceValidationService {
     private readonly settingsService: AttendanceSettingsService,
     private readonly deviceService: DeviceService,
   ) {}
+
+  /**
+   * Robust lookup for one attendance row by (sessionId, instructorUserId).
+   *
+   * Why so many fallbacks? In some environments Mongoose's schema-driven
+   * casting of `ObjectId` query values silently misses rows that exist in the
+   * collection (mixed-typed legacy data, different connection, stale schema,
+   * etc.). We try, in order: Mongoose with strings, Mongoose with explicit
+   * ObjectIds, then the raw MongoDB driver with both shapes, then a manual
+   * scan of every row in the collection that matches the session.
+   *
+   * Every step is logged so we can tell from the API logs exactly which path
+   * actually found the row.
+   */
+  private async findAttendanceRowRobust(
+    sessionId: string,
+    instructorUserId: string,
+    requireOpen: boolean,
+  ): Promise<AttendanceRecordDocument | null> {
+    const tag = `[ATTENDANCE LOOKUP] session=${sessionId} instructor=${instructorUserId} requireOpen=${requireOpen}`;
+
+    if (
+      !Types.ObjectId.isValid(sessionId) ||
+      !Types.ObjectId.isValid(instructorUserId)
+    ) {
+      this.logger.warn(`${tag} — invalid id, returning null`);
+      return null;
+    }
+
+    const sessionObj = new Types.ObjectId(sessionId);
+    const instructorObj = new Types.ObjectId(instructorUserId);
+
+    const matchOpen = (r: {
+      checkInAt?: Date | null;
+      checkOutAt?: Date | null;
+    }) => !requireOpen || (r.checkInAt != null && r.checkOutAt == null);
+
+    // 1) Mongoose findOne with string ids (relies on schema casting).
+    const baseStringQuery: Record<string, unknown> = {
+      sessionId,
+      instructorUserId,
+    };
+    if (requireOpen) {
+      baseStringQuery.checkInAt = { $ne: null };
+      baseStringQuery.checkOutAt = null;
+    }
+    let row = await this.attendanceModel.findOne(baseStringQuery).exec();
+    if (row) {
+      this.logger.debug(`${tag} — matched via mongoose-string`);
+      return row;
+    }
+
+    // 2) Mongoose findOne with explicit ObjectId casts.
+    const baseObjectIdQuery: Record<string, unknown> = {
+      sessionId: sessionObj,
+      instructorUserId: instructorObj,
+    };
+    if (requireOpen) {
+      baseObjectIdQuery.checkInAt = { $ne: null };
+      baseObjectIdQuery.checkOutAt = null;
+    }
+    row = await this.attendanceModel.findOne(baseObjectIdQuery).exec();
+    if (row) {
+      this.logger.debug(`${tag} — matched via mongoose-objectid`);
+      return row;
+    }
+
+    // 3) Raw MongoDB driver, both shapes via $or, no Mongoose casting.
+    const rawCollection =
+      this.attendanceModel.collection ??
+      this.attendanceModel.db.collection('attendance_records');
+
+    const rawDoc = await rawCollection.findOne({
+      $or: [
+        { sessionId: sessionObj, instructorUserId: instructorObj },
+        { sessionId, instructorUserId },
+        { sessionId: sessionObj, instructorUserId },
+        { sessionId, instructorUserId: instructorObj },
+      ],
+      ...(requireOpen ? { checkInAt: { $ne: null }, checkOutAt: null } : {}),
+    });
+    if (rawDoc) {
+      this.logger.debug(`${tag} — matched via raw-driver (_id=${rawDoc._id})`);
+      return this.attendanceModel.findById(rawDoc._id).exec();
+    }
+
+    // 4) Final defensive scan: list every row for this session (typically one
+    //    per instructor) and match instructorUserId in JS via string compare.
+    const sessionRows = await rawCollection
+      .find({ $or: [{ sessionId: sessionObj }, { sessionId }] })
+      .toArray();
+
+    this.logger.warn(
+      `${tag} — no direct match, scanning ${sessionRows.length} session row(s) in collection`,
+    );
+
+    for (const r of sessionRows) {
+      this.logger.warn(
+        `${tag}   row _id=${r._id} sessionId=${String(r.sessionId)} (${typeof r.sessionId}) instructorUserId=${String(r.instructorUserId)} (${typeof r.instructorUserId}) checkInAt=${r.checkInAt ?? 'null'} checkOutAt=${r.checkOutAt ?? 'null'}`,
+      );
+      if (
+        String(r.instructorUserId) === instructorUserId &&
+        matchOpen(r as { checkInAt?: Date | null; checkOutAt?: Date | null })
+      ) {
+        this.logger.debug(`${tag} — matched via JS-scan (_id=${r._id})`);
+        return this.attendanceModel.findById(r._id).exec();
+      }
+    }
+
+    this.logger.warn(`${tag} — NOT FOUND`);
+    return null;
+  }
+
+  private findAttendanceRowForSessionInstructor(
+    sessionId: string,
+    instructorUserId: string,
+  ): Promise<AttendanceRecordDocument | null> {
+    return this.findAttendanceRowRobust(sessionId, instructorUserId, false);
+  }
+
+  private findOwnedOpenAttendance(
+    sessionId: string,
+    instructorUserId: string,
+  ): Promise<AttendanceRecordDocument | null> {
+    return this.findAttendanceRowRobust(sessionId, instructorUserId, true);
+  }
 
   /**
    * Complete validation pipeline for Check-In.
@@ -74,9 +203,10 @@ export class AttendanceValidationService {
       );
     }
 
-    const existing = await this.attendanceModel
-      .findOne({ sessionId: dto.sessionId, instructorUserId })
-      .exec();
+    const existing = await this.findAttendanceRowForSessionInstructor(
+      dto.sessionId,
+      instructorUserId,
+    );
     if (existing && existing.checkInAt) {
       throw new ConflictException(
         'You have already checked in to this session',
@@ -236,6 +366,10 @@ export class AttendanceValidationService {
     dto: CheckOutDto,
     instructorUserId: string,
   ): Promise<AttendanceRecordDocument> {
+    this.logger.log(
+      `[CHECK-OUT] start session=${dto.sessionId} instructor=${instructorUserId}`,
+    );
+
     const settings = await this.settingsService.getSettingsOrFail();
 
     const session = await this.sessionModel.findById(dto.sessionId).exec();
@@ -246,11 +380,33 @@ export class AttendanceValidationService {
       );
     }
 
-    const record = await this.attendanceModel
-      .findOne({ sessionId: dto.sessionId, instructorUserId })
-      .exec();
+    let record = await this.findOwnedOpenAttendance(
+      dto.sessionId,
+      instructorUserId,
+    );
 
-    if (!record || !record.checkInAt) {
+    // If no open row exists, distinguish "never checked in" from
+    // "already checked out" by looking up any row for the pair.
+    if (!record) {
+      const any = await this.findAttendanceRowForSessionInstructor(
+        dto.sessionId,
+        instructorUserId,
+      );
+      if (any?.checkOutAt) {
+        this.logger.warn(
+          `[CHECK-OUT] already checked out (record _id=${any._id})`,
+        );
+        throw new ConflictException(
+          'You have already checked out of this session',
+        );
+      }
+      this.logger.warn(
+        `[CHECK-OUT] no open attendance row for session=${dto.sessionId} instructor=${instructorUserId}`,
+      );
+      throw new BadRequestException('You must check in before checking out');
+    }
+
+    if (!record.checkInAt) {
       throw new BadRequestException('You must check in before checking out');
     }
     if (record.checkOutAt) {
@@ -258,6 +414,9 @@ export class AttendanceValidationService {
         'You have already checked out of this session',
       );
     }
+    this.logger.log(
+      `[CHECK-OUT] found open attendance _id=${record._id} for session=${dto.sessionId}`,
+    );
 
     const now = new Date();
     const tz = settings.timezone || 'Africa/Mogadishu';
@@ -342,6 +501,7 @@ export class AttendanceValidationService {
       sessionEnd.getTime() - settings.earlyCheckoutThresholdMinutes * 60000,
     );
     if (now < earlyThresholdTime) {
+      record.statusFlags ??= [];
       if (!record.statusFlags.includes(StatusFlag.EARLY_CHECKOUT)) {
         record.statusFlags.push(StatusFlag.EARLY_CHECKOUT);
       }
@@ -372,12 +532,10 @@ export class AttendanceValidationService {
     const session = await this.sessionModel.findById(dto.sessionId).exec();
     if (!session) throw new NotFoundException('Session not found');
 
-    const record = await this.attendanceModel
-      .findOne({
-        sessionId: dto.sessionId,
-        instructorUserId: dto.instructorUserId,
-      })
-      .exec();
+    const record = await this.findAttendanceRowForSessionInstructor(
+      dto.sessionId,
+      dto.instructorUserId,
+    );
 
     if (!record || !record.checkInAt) {
       throw new BadRequestException(
@@ -397,6 +555,9 @@ export class AttendanceValidationService {
       (now.getTime() - record.checkInAt.getTime()) / 60000,
     );
 
+    if (!record.irregularityReasons) {
+      record.irregularityReasons = [];
+    }
     if (!record.irregularityReasons.includes(StatusFlag.ADMIN_CHECKOUT)) {
       record.irregularityReasons.push(StatusFlag.ADMIN_CHECKOUT);
     }
@@ -413,11 +574,12 @@ export class AttendanceValidationService {
    *  - EARLY_CHECKOUT         → EARLY_CHECKOUT
    *  - otherwise              → PRESENT
    */
-  private computeFinalStatus(flags: string[]): AttendanceStatus {
-    if (flags.includes(StatusFlag.EARLY_CHECKOUT)) {
+  private computeFinalStatus(flags: string[] | undefined | null): AttendanceStatus {
+    const f = flags ?? [];
+    if (f.includes(StatusFlag.EARLY_CHECKOUT)) {
       return AttendanceStatus.EARLY_CHECKOUT;
     }
-    if (flags.includes(StatusFlag.LATE)) {
+    if (f.includes(StatusFlag.LATE)) {
       return AttendanceStatus.LATE;
     }
     return AttendanceStatus.PRESENT;

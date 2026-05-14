@@ -10,6 +10,22 @@ import 'package:mobile/core/services/device_service.dart';
 import 'package:mobile/core/values/app_colors.dart';
 
 class TodaySessionsController extends GetxController {
+  static String _messageFromDioResponse(dynamic data) {
+    if (data == null) return 'Request failed';
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    if (data is Map) {
+      final m = Map<String, dynamic>.from(data);
+      final msg = m['message'];
+      if (msg is String && msg.isNotEmpty) return msg;
+      if (msg is List && msg.isNotEmpty) {
+        return msg.map((e) => e.toString()).join(' ');
+      }
+      final err = m['error'];
+      if (err is String && err.isNotEmpty) return err;
+    }
+    return 'Request failed';
+  }
+
   final ApiClient _apiClient = Get.find<ApiClient>();
   final LocationService _locationService = Get.find<LocationService>();
   final DeviceService _deviceService = Get.find<DeviceService>();
@@ -65,17 +81,65 @@ class TodaySessionsController extends GetxController {
     }
   }
 
+  void _setAttendanceState(String sessionId, AttendanceRecordModel? state) {
+    attendanceStates[sessionId] = state;
+    attendanceStates.refresh();
+  }
+
+  /// Session to highlight: checked-in (not out) first, then active window, else first.
+  ClassSessionModel? getPrimarySession() {
+    if (sessions.isEmpty) return null;
+    final checkedIn = sessions.firstWhereOrNull((s) {
+      final a = attendanceStates[s.id];
+      return a != null && a.isCurrentlyCheckedIn;
+    });
+    if (checkedIn != null) return checkedIn;
+    return sessions.firstWhereOrNull((s) => s.isActive) ?? sessions.first;
+  }
+
   Future<void> fetchAttendanceState(String sessionId) async {
     try {
       final response = await _apiClient.get('/attendance/me/session/$sessionId');
-      if (response.statusCode == 200 && response.data != null) {
-        attendanceStates[sessionId] = AttendanceRecordModel.fromJson(response.data);
-      } else {
-        attendanceStates[sessionId] = null;
+      if (response.statusCode != 200) {
+        return;
       }
-    } catch (e) {
-      // Silently fail for individual states
-      attendanceStates[sessionId] = null;
+
+      final body = response.data;
+      final isEmptyBody = body == null ||
+          (body is String && body.trim().isEmpty);
+
+      // Some stacks return 200 with an empty body instead of JSON `null`; do not wipe a known checked-in row.
+      if (isEmptyBody) {
+        final existing = attendanceStates[sessionId];
+        if (existing != null && existing.isCurrentlyCheckedIn) {
+          debugPrint(
+            '[attendance/me/session] empty body for $sessionId; keeping checked-in state',
+          );
+          return;
+        }
+        _setAttendanceState(sessionId, null);
+        return;
+      }
+
+      if (body is Map) {
+        try {
+          final map = Map<String, dynamic>.from(body);
+          _setAttendanceState(
+            sessionId,
+            AttendanceRecordModel.fromJson(map),
+          );
+        } catch (e, st) {
+          debugPrint('[attendance/me/session] parse $sessionId: $e\n$st');
+        }
+        return;
+      }
+
+      debugPrint(
+        '[attendance/me/session] unexpected body type ${body.runtimeType} for $sessionId',
+      );
+    } catch (e, st) {
+      debugPrint('[attendance/me/session] $sessionId: $e\n$st');
+      _setAttendanceState(sessionId, null);
     }
   }
 
@@ -86,6 +150,13 @@ class TodaySessionsController extends GetxController {
       final position = await _locationService.getCurrentPosition();
       if (position == null) {
         debugPrint('[CHECK-IN] Error: Location fetching failed.');
+        Get.snackbar(
+          'Location required',
+          'Could not read your location for check-in.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         return;
       }
 
@@ -107,9 +178,21 @@ class TodaySessionsController extends GetxController {
       debugPrint('[CHECK-IN] Response Data: ${response.data}');
 
       if (response.statusCode == 201) {
-        await fetchAttendanceState(sessionId);
+        final data = response.data;
+        if (data is Map) {
+          try {
+            _setAttendanceState(
+              sessionId,
+              AttendanceRecordModel.fromJson(Map<String, dynamic>.from(data)),
+            );
+          } catch (e, st) {
+            debugPrint('[CHECK-IN] parse response: $e\n$st');
+          }
+        }
+        // Refresh state from backend (source of truth) for all sessions.
+        await fetchTodaySessions();
         Get.snackbar(
-          'Success', 
+          'Success',
           'Checked in successfully',
           backgroundColor: AppColors.primary,
           colorText: Colors.white,
@@ -123,15 +206,18 @@ class TodaySessionsController extends GetxController {
         debugPrint('[CHECK-IN] Response Code: ${e.response?.statusCode}');
         debugPrint('[CHECK-IN] Response Data: ${e.response?.data}');
       }
-      
+
       String message = 'Check-in failed';
       if (e is DioException && e.response?.data != null) {
-        message = e.response?.data['message'] ?? message;
+        message = _messageFromDioResponse(e.response!.data);
       }
       Get.snackbar('Error', message,
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
+      // Re-sync from backend so the UI matches the real attendance state
+      // (e.g. if 409 means we are actually already checked in).
+      await fetchAttendanceState(sessionId);
     } finally {
       isProcessing.value = false;
       debugPrint('--- [CHECK-IN] ENDED ---');
@@ -145,6 +231,13 @@ class TodaySessionsController extends GetxController {
       final position = await _locationService.getCurrentPosition();
       if (position == null) {
         debugPrint('[CHECK-OUT] Error: Location fetching failed.');
+        Get.snackbar(
+          'Location required',
+          'Could not read your location for check-out.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
         return;
       }
 
@@ -166,9 +259,20 @@ class TodaySessionsController extends GetxController {
       debugPrint('[CHECK-OUT] Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
-        await fetchAttendanceState(sessionId);
+        final data = response.data;
+        if (data is Map) {
+          try {
+            _setAttendanceState(
+              sessionId,
+              AttendanceRecordModel.fromJson(Map<String, dynamic>.from(data)),
+            );
+          } catch (e, st) {
+            debugPrint('[CHECK-OUT] parse response: $e\n$st');
+          }
+        }
+        await fetchTodaySessions();
         Get.snackbar(
-          'Success', 
+          'Success',
           'Checked out successfully',
           backgroundColor: AppColors.primary,
           colorText: Colors.white,
@@ -185,12 +289,15 @@ class TodaySessionsController extends GetxController {
 
       String message = 'Check-out failed';
       if (e is DioException && e.response?.data != null) {
-        message = e.response?.data['message'] ?? message;
+        message = _messageFromDioResponse(e.response!.data);
       }
       Get.snackbar('Error', message,
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
+      // Re-sync from backend so the UI matches reality (e.g. if backend says
+      // "must check in", the local optimistic state is wrong — refresh it).
+      await fetchAttendanceState(sessionId);
     } finally {
       isProcessing.value = false;
       debugPrint('--- [CHECK-OUT] ENDED ---');
